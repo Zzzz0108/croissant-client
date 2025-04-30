@@ -124,18 +124,18 @@ _（本项目界面设计借鉴了
 
 ## 项目截图 📷
 
-![登录界面](https://gitee.com/alex-leesun/vibe-music-screenshot/raw/main/client/client_login.png)
-![推荐界面](https://gitee.com/alex-leesun/vibe-music-screenshot/raw/main/client/client_home.png)
-![歌曲推荐界面](https://gitee.com/alex-leesun/vibe-music-screenshot/raw/main/client/client_recommended.png)
-![曲库界面](https://gitee.com/alex-leesun/vibe-music-screenshot/raw/main/client/client_song_library.png)
-![歌手列表界面](https://gitee.com/alex-leesun/vibe-music-screenshot/raw/main/client/client_artist.png)
-![歌手详情界面](https://gitee.com/alex-leesun/vibe-music-screenshot/raw/main/client/client_artist_detail.png)
-![歌单列表界面](https://gitee.com/alex-leesun/vibe-music-screenshot/raw/main/client/client_playlist.png)
-![歌单详情界面](https://gitee.com/alex-leesun/vibe-music-screenshot/raw/main/client/client_playlist_detail.png)
-![歌单评论界面](https://gitee.com/alex-leesun/vibe-music-screenshot/raw/main/client/client_playlist_comment.png)
-![我的喜欢界面](https://gitee.com/alex-leesun/vibe-music-screenshot/raw/main/client/client_favourite.png)
-![歌曲播放界面](https://gitee.com/alex-leesun/vibe-music-screenshot/raw/main/client/client_song_play.png)
-![个人中心界面](https://gitee.com/alex-leesun/vibe-music-screenshot/raw/main/client/client_profile.png)
+![登录界面](https://github.com/Alex-LiSun/vibe-music-client/blob/main/img/client_login.png)
+![推荐界面](https://github.com/Alex-LiSun/vibe-music-client/blob/main/img/client_home.png)
+![歌曲推荐界面](https://github.com/Alex-LiSun/vibe-music-client/blob/main/img/client_recommended.png)
+![曲库界面](https://github.com/Alex-LiSun/vibe-music-client/blob/main/img/client_song_library.png)
+![歌手列表界面](https://github.com/Alex-LiSun/vibe-music-client/blob/main/img/client_artist.png)
+![歌手详情界面](https://github.com/Alex-LiSun/vibe-music-client/blob/main/img/client_artist_detail.png)
+![歌单列表界面](https://github.com/Alex-LiSun/vibe-music-client/blob/main/img/client_playlist.png)
+![歌单详情界面](https://github.com/Alex-LiSun/vibe-music-client/blob/main/img/client_playlist_detail.png)
+![歌单评论界面](https://github.com/Alex-LiSun/vibe-music-client/blob/main/img/client_playlist_comment.png)
+![我的喜欢界面](https://github.com/Alex-LiSun/vibe-music-client/blob/main/img/client_favourite.png)
+![歌曲播放界面](https://github.com/Alex-LiSun/vibe-music-client/blob/main/img/client_song_play.png)
+![个人中心界面](https://github.com/Alex-LiSun/vibe-music-client/blob/main/img/client_profile.png)
 
 ## 项目后台接口 🧩
 
