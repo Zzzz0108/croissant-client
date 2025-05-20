@@ -122,6 +122,10 @@ _（本项目界面设计借鉴了
 - `pnpm format`: 使用 Prettier 格式化代码。
 - `pnpm type-check`: 使用 vue-tsc 进行 TypeScript 类型检查。
 
+## 项目演示 📺
+
+视频地址：[https://www.bilibili.com/video/BV1tKJ8z8E6z/]
+
 ## 项目截图 📷
 
 ![登录界面](https://github.com/Alex-LiSun/vibe-music-client/blob/main/img/client_login.png)
