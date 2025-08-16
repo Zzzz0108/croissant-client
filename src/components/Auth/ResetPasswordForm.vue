@@ -29,7 +29,7 @@ const resetForm = reactive({
 // 错误信息
 const errors = reactive({
   email: '',
-  code: '',
+  verificationCode: '',
   password: '',
   confirmPassword: '',
   agree: ''
@@ -81,17 +81,17 @@ const validateEmail = () => {
 // 验证验证码
 const validateCode = () => {
   if (!resetForm.verificationCode) {
-    errors.code = '请输入验证码'
+    errors.verificationCode = '请输入验证码'
     return
   }
 
   const codeRegex = /^[0-9a-zA-Z]{6}$/
   if (!codeRegex.test(resetForm.verificationCode)) {
-    errors.code = '验证码格式：6位字符（大小写字母、数字）'
+    errors.verificationCode = '验证码格式：6位字符（大小写字母、数字）'
     return
   }
 
-  errors.code = ''
+  errors.verificationCode = ''
 }
 
 // 验证密码
@@ -276,7 +276,7 @@ onBeforeUnmount(() => {
 
           <!-- 验证码 + 发送按钮 -->
           <div class="input-group">
-            <div class="input-box" style="flex: 1" :class="{ 'input-error': errors.code }">
+            <div class="input-box" style="flex: 1" :class="{ 'input-error': errors.verificationCode }">
               <span class="icon">📱</span>
               <input 
                 placeholder="验证码" 
@@ -292,7 +292,7 @@ onBeforeUnmount(() => {
               {{ isSending ? `${countdown}s` : '发送验证码' }}
             </button>
           </div>
-          <span class="error-message" v-if="errors.code">{{ errors.code }}</span>
+          <span class="error-message" v-if="errors.verificationCode">{{ errors.verificationCode }}</span>
 
           <!-- 新密码输入 -->
           <div class="input-box" :class="{ 'input-error': errors.password }">
@@ -367,7 +367,7 @@ onBeforeUnmount(() => {
 .reset-page {
   display: flex;
   justify-content: center;
-  height: 100vh;
+  height: 90vh;
   background: #f5f6fa;
 }
 
@@ -375,7 +375,7 @@ onBeforeUnmount(() => {
   width: 100%;
   max-width: 432px;
   min-width: 320px;
-  padding: clamp(16px, 3vw, 24px) 0 0;
+  padding: clamp(8px, 2vw, 12px) 0 0;
 }
 
 .head {

@@ -44,6 +44,12 @@ instance.interceptors.request.use(
     // 优先使用临时token，如果没有则使用用户信息中的token
     const token = userStore.tempToken || userStore.userInfo?.token
     console.log('从Store获取的Token:', token)
+    console.log('Token来源:', userStore.tempToken ? 'tempToken' : 'userInfo.token')
+    console.log('用户信息状态:', {
+      hasUserInfo: !!userStore.userInfo,
+      hasToken: !!userStore.userInfo?.token,
+      tokenLength: userStore.userInfo?.token?.length || 0
+    })
 
     if (token) {
       // 确保headers对象存在
@@ -52,14 +58,51 @@ instance.interceptors.request.use(
       }
       // 添加Bearer前缀
       config.headers.Authorization = `Bearer ${token}`
+      console.log('Token已添加到请求头:', {
+        tokenLength: token.length,
+        tokenPrefix: token.substring(0, 20) + '...',
+        fullHeader: config.headers.Authorization
+      })
     } else {
       console.warn('Token不存在，请求可能失败')
+      console.error('Token获取失败详情:', {
+        tempToken: userStore.tempToken,
+        userInfoToken: userStore.userInfo?.token,
+        userInfo: userStore.userInfo,
+        isLoggedIn: userStore.isLoggedIn
+      })
     }
 
     // 调试信息
     console.log('请求URL:', config.url)
     console.log('请求头:', config.headers)
     console.log('最终Token:', token)
+    
+    // 权限相关的调试信息
+    if (config.url.includes('/song/') || config.url.includes('/favorite/') || config.url.includes('/playlist/')) {
+      console.log('🔐 权限相关请求调试:', {
+        url: config.url,
+        method: config.method?.toUpperCase(),
+        hasToken: !!token,
+        tokenLength: token?.length || 0,
+        userRole: userStore.userRole,
+        isUser: userStore.isUser,
+        isAdmin: userStore.isAdmin,
+        isAuthenticated: userStore.isAuthenticated
+      })
+      
+      // 特别针对收藏功能的调试
+      if (config.url.includes('/favorite/')) {
+        console.log('⭐ 收藏功能权限调试:', {
+          expectedRole: 'ROLE_USER',
+          actualRole: userStore.userRole,
+          roleMatch: userStore.userRole === 'ROLE_USER',
+          tokenValid: !!token,
+          userAuthenticated: userStore.isAuthenticated,
+          fullUserInfo: userStore.userInfo
+        })
+      }
+    }
     return config
   },
   (error) => {
@@ -110,10 +153,16 @@ instance.interceptors.response.use(
           const url = error.config?.url || ''
           if (url.includes('/favorite/getFavoritePlaylists')) {
             ElMessage.error('获取收藏歌单失败，请检查参数格式')
+          } else if (url.includes('/favorite/collectSong')) {
+            ElMessage.error('收藏歌曲失败，后端权限配置问题，请联系管理员检查Spring Security配置')
+          } else if (url.includes('/favorite/cancelCollectSong')) {
+            ElMessage.error('取消收藏歌曲失败，后端权限配置问题，请联系管理员检查Spring Security配置')
           } else if (url.includes('/favorite/')) {
             ElMessage.error('收藏相关操作失败，请检查参数')
           } else if (url.includes('/playlist/')) {
             ElMessage.error('歌单相关操作失败，请检查权限')
+          } else if (url.includes('/song/collectSong')) {
+            ElMessage.error('收藏歌曲失败，API路径已更新，请刷新页面重试')
           } else {
             ElMessage.error(`没有权限访问: ${url}`)
           }

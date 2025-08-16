@@ -7,10 +7,8 @@ const emit = defineEmits(['success', 'switch-tab'])
 const userStore = UserStore()
 
 const loading = ref(false)
-const registerFormRef = ref()
 
 // 新增的状态
-const code = ref('')
 const agree = ref(false)
 const showPassword = ref(false)
 const showConfirmPassword = ref(false)
@@ -26,6 +24,7 @@ const registerForm = reactive({
   email: '',
   username: '',
   password: '',
+  verificationCode: '', // 验证码字段，与后端API保持一致
 })
 
 // 错误信息
@@ -34,33 +33,11 @@ const errors = reactive({
   username: '',
   password: '',
   confirmPassword: '',
-  code: '',
+  verificationCode: '',
   agree: ''
 })
 
-// 表单验证规则
-const registerRules = reactive({
-  email: [
-    { required: true, message: '请输入邮箱', trigger: 'blur' },
-    { type: 'email', message: '请输入正确的邮箱格式', trigger: 'blur' },
-  ],
-  username: [
-    { required: true, message: '请输入用户名', trigger: 'blur' },
-    {
-      pattern: /^[a-zA-Z0-9_-]{4,16}$/,
-      message: '用户名格式：4-16位字符（字母、数字、下划线、连字符）',
-      trigger: 'blur',
-    },
-  ],
-  password: [
-    { required: true, message: '请输入密码', trigger: 'blur' },
-    {
-      pattern: /^(?=.*[0-9])(?=.*[a-zA-Z])[0-9A-Za-z\W]{8,18}$/,
-      message: '密码格式：8-18位数字、字母、符号的任意两种组合',
-      trigger: 'blur',
-    },
-  ],
-})
+
 
 // 验证邮箱
 const validateEmail = () => {
@@ -129,18 +106,34 @@ const validateConfirmPassword = () => {
 
 // 验证验证码
 const validateCode = () => {
-  if (!code.value) {
-    errors.code = '请输入验证码'
+  if (!registerForm.verificationCode) {
+    errors.verificationCode = '请输入验证码'
     return
   }
 
-  const codeRegex = /^[0-9]{6}$/
-  if (!codeRegex.test(code.value)) {
-    errors.code = '验证码必须是6位数字'
+  // 添加调试信息
+  console.log('验证码验证:', {
+    value: registerForm.verificationCode,
+    length: registerForm.verificationCode.length,
+    type: typeof registerForm.verificationCode
+  })
+
+  // 验证码格式：6位字母+数字组合
+  const codeRegex = /^[a-zA-Z0-9]{6}$/
+  const isValid = codeRegex.test(registerForm.verificationCode)
+  
+  console.log('正则验证结果:', {
+    regex: codeRegex.toString(),
+    testResult: isValid,
+    matchResult: registerForm.verificationCode.match(codeRegex)
+  })
+  
+  if (!isValid) {
+    errors.verificationCode = '验证码格式错误，请输入6位字母或数字'
     return
   }
 
-  errors.code = ''
+  errors.verificationCode = ''
 }
 
 // 清除错误
@@ -157,14 +150,25 @@ const handleSendCode = async () => {
     isSending.value = true
     countdown.value = 60
     
-    // 这里可以调用发送验证码的API
-    ElNotification({
-      title: '验证码发送成功',
-      message: '验证码已发送到您的邮箱',
-      type: 'success',
-      duration: 3000
-    })
-    registerSuccess.value = true
+    // 调用发送验证码API
+    const { sendEmailCode } = await import('@/api/system')
+    const response = await sendEmailCode(registerForm.email)
+    
+    if (response.code === 0) {
+      ElNotification({
+        title: '验证码发送成功',
+        message: '验证码已发送到您的邮箱',
+        type: 'success',
+        duration: 3000
+      })
+    } else {
+      ElNotification({
+        title: '验证码发送失败',
+        message: response.message || '发送验证码失败',
+        type: 'error',
+        duration: 4000
+      })
+    }
     
     // 倒计时逻辑
     timer = setInterval(() => {
@@ -175,16 +179,18 @@ const handleSendCode = async () => {
       }
     }, 1000)
   } catch (error) {
-    message.value = error.message || '发送验证码失败'
-    registerSuccess.value = false
+    ElNotification({
+      title: '发送验证码异常',
+      message: error.message || '发送验证码失败',
+      type: 'error',
+      duration: 4000
+    })
     isSending.value = false
   }
 }
 
 // 注册处理
 const handleRegister = async () => {
-  if (!registerFormRef.value) return
-  
   // 验证所有必填字段
   validateEmail()
   validateUsername()
@@ -201,49 +207,42 @@ const handleRegister = async () => {
   const hasErrors = Object.values(errors).some(error => error !== '')
   if (hasErrors) return
 
-  await registerFormRef.value.validate(async (valid) => {
-    if (valid) {
-      loading.value = true
-      try {
-        const result = await userStore.userRegister({
+  loading.value = true
+  try {
+            const result = await userStore.userRegister({
           email: registerForm.email,
           username: registerForm.username,
           password: registerForm.password,
-          code: code.value
+          verificationCode: registerForm.verificationCode
         })
-        
-        if (result.success) {
-  
-          ElNotification({
-            title: '注册成功',
-            message: result.message || '注册成功！',
-            type: 'success',
-            duration: 3000
-          })
-          emit('success')
-        } else {
-
-          ElNotification({
-            title: '注册失败',
-            message: result.message || '注册失败',
-            type: 'error',
-            duration: 4000
-          })
-        }
-      } catch (error) {
-        console.error('注册异常:', error)
-
-        ElNotification({
-          title: '注册异常',
-          message: error.message || '注册失败',
-          type: 'error',
-          duration: 4000
-        })
-      } finally {
-        loading.value = false
-      }
+    
+    if (result.success) {
+      ElNotification({
+        title: '注册成功',
+        message: result.message || '注册成功！',
+        type: 'success',
+        duration: 3000
+      })
+      emit('success')
+    } else {
+      ElNotification({
+        title: '注册失败',
+        message: result.message || '注册失败',
+        type: 'error',
+        duration: 4000
+      })
     }
-  })
+  } catch (error) {
+    console.error('注册异常:', error)
+    ElNotification({
+      title: '注册异常',
+      message: error.message || '注册失败',
+      type: 'error',
+      duration: 4000
+    })
+  } finally {
+    loading.value = false
+  }
 }
 
 function switchToLogin() {
@@ -327,7 +326,7 @@ onBeforeUnmount(() => {
               <span class="icon">📱</span>
               <input 
                 placeholder="验证码" 
-                v-model="code" 
+                v-model="registerForm.verificationCode" 
                 @input="validateCode"
               />
             </div>
@@ -339,7 +338,7 @@ onBeforeUnmount(() => {
               {{ isSending ? `${countdown}s` : '发送验证码' }}
             </button>
           </div>
-          <span class="error-message" v-if="errors.code">{{ errors.code }}</span>
+          <span class="error-message" v-if="errors.verificationCode">{{ errors.verificationCode }}</span>
 
           <!-- 协议勾选 -->
           <div class="agreement">
@@ -385,7 +384,7 @@ onBeforeUnmount(() => {
 .register-page {
   display: flex;
   justify-content: center;
-  height: 70vh;
+  height: 90vh;
   background: #f5f6fa;
 }
 

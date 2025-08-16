@@ -55,7 +55,15 @@ export const UserStore = defineStore('UserStore', {
         }).join(''))
         
         const payload = JSON.parse(jsonPayload)
-        console.log('JWT Token解析结果:', payload)
+        console.log('🔐 JWT Token解析结果:', payload)
+        console.log('🔐 JWT Claims详情:', {
+          role: payload.claims?.role,
+          userId: payload.claims?.userId,
+          email: payload.claims?.email,
+          username: payload.claims?.username,
+          exp: payload.exp,
+          expDate: new Date(payload.exp * 1000).toLocaleString()
+        })
         return payload
       } catch (error) {
         console.error('JWT Token解析失败:', error)
@@ -181,9 +189,11 @@ export const UserStore = defineStore('UserStore', {
             if (userInfoResponse.code === 0) {
               console.log('用户信息获取成功，开始设置完整用户状态...')
               this.setUserInfo(userInfoResponse.data, token)
+              // 确保token正确保存后再清理临时token
+              console.log('登录完成，当前用户状态:', this.userInfo, this.isLoggedIn)
+              console.log('最终保存的token:', this.userInfo.token)
               // 清理临时token
               this.tempToken = null
-              console.log('登录完成，当前用户状态:', this.userInfo, this.isLoggedIn)
               return { success: true, message: '登录成功' }
             }
             console.error('获取用户信息失败:', userInfoResponse.message)

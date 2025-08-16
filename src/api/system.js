@@ -135,33 +135,29 @@ export const addSongComment = (songId, content) => {
 
 /** 收藏歌曲 */
 export const collectSong = (songId) => {
-  return http('post', '/song/collectSong', {
-    data: { songId }
-  })
+  return http('post', `/favorite/collectSong?songId=${songId}`)
 }
 
 /** 取消收藏歌曲 */
 export const cancelCollectSong = (songId) => {
-  return http('delete', `/song/cancelCollectSong/${songId}`)
+  return http('delete', `/favorite/cancelCollectSong?songId=${songId}`)
 }
 
 /** 获取收藏歌曲列表 */
 export const getCollectedSongs = (page = 1, pageSize = 10) => {
-  return http('get', '/song/getCollectedSongs', {
-    params: { page, pageSize }
+  return http('post', '/favorite/getFavoriteSongs', {
+    data: { page, pageSize }
   })
 }
 
 /** 收藏歌单 */
 export const collectPlaylist = (playlistId) => {
-  return http('post', '/favorite/collectPlaylist', {
-    data: { playlistId }
-  })
+  return http('post', `/favorite/collectPlaylist?playlistId=${playlistId}`)
 }
 
 /** 取消收藏歌单 */
 export const cancelCollectPlaylist = (playlistId) => {
-  return http('delete', `/favorite/cancelCollectPlaylist/${playlistId}`)
+  return http('delete', `/favorite/cancelCollectPlaylist?playlistId=${playlistId}`)
 }
 
 /** 获取收藏歌单列表 */

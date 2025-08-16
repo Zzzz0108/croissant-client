@@ -163,17 +163,17 @@ const isCurrentPlaying = (songId) => {
           <div>下载</div>
         </div>
       </template>
-      <template #default="{ row }">
+      <template #default="scope">
         <div
           class="grid grid-cols-[auto_4fr_3fr_3fr_1fr_2fr_1fr] items-center gap-6 w-full group transition duration-300 rounded-2xl p-2"
           :class="[
-            isCurrentPlaying(row.songId) ? 'bg-[hsl(var(--hover-menu-bg))]' : 'hover:bg-[hsl(var(--hover-menu-bg))]',
+            isCurrentPlaying(scope.row.songId) ? 'bg-[hsl(var(--hover-menu-bg))]' : 'hover:bg-[hsl(var(--hover-menu-bg))]',
             'cursor-pointer'
           ]"
-          @click="handlePlay(row)">
+          @click="handlePlay(scope.row)">
                         <!-- 标题和封面 -->
-          <div class="w-10 h-10 relative" v-if="row.coverUrl">
-            <el-image :src="row.coverUrl" fit="cover" lazy :alt="row.songName" class="w-full h-full rounded-md" />
+          <div class="w-10 h-10 relative" v-if="scope.row.coverUrl">
+            <el-image :src="scope.row.coverUrl" fit="cover" lazy :alt="scope.row.songName" class="w-full h-full rounded-md" />
                           <!-- Play 按钮，使用 group-hover 控制透明度 -->
             <div
               class="absolute inset-0 flex items-center justify-center text-white opacity-0 transition-opacity duration-300 z-10 group-hover:opacity-100 group-hover:bg-black/50 rounded-md">
@@ -183,33 +183,33 @@ const isCurrentPlaying = (songId) => {
 
           <!-- 歌曲名称 -->
           <div class="text-left">
-            <div class="flex-1 line-clamp-1">{{ row.songName }}</div>
+            <div class="flex-1 line-clamp-1">{{ scope.row.songName }}</div>
           </div>
 
           <!-- 歌手 -->
           <div class="text-left">
-            <div class="line-clamp-1 w-48">{{ row.artistName }}</div>
+            <div class="line-clamp-1 w-48">{{ scope.row.artistName }}</div>
           </div>
 
           <!-- 专辑 -->
-          <div class="text-left">{{ row.album }}</div>
+          <div class="text-left">{{ scope.row.album }}</div>
 
           <!-- 喜欢 -->
           <div class="flex items-center ml-1">
-            <el-button text circle @click="handleLike($event, row)">
-              <icon-mdi:cards-heart-outline v-if="userStore.isLoggedIn || row.likeStatus === 0" class="text-lg" />
+            <el-button text circle @click="handleLike($event, scope.row)">
+              <icon-mdi:cards-heart-outline v-if="userStore.isLoggedIn || scope.row.likeStatus === 0" class="text-lg" />
               <icon-mdi:cards-heart v-else class="text-lg text-red-500" />
             </el-button>
           </div>
 
           <!-- 时长 -->
           <div class="text-left ml-8">
-            <span>{{ formatMillisecondsToTime(Number(row.duration) * 1000) }}</span>
+            <span>{{ formatMillisecondsToTime(Number(scope.row.duration) * 1000) }}</span>
           </div>
 
           <!-- 下载 -->
           <div class="flex items-center ml-1">
-            <el-button text circle @click.stop="downLoadMusic($event, row)">
+            <el-button text circle @click.stop="downLoadMusic($event, scope.row)">
               <icon-material-symbols:download class="text-lg" />
             </el-button>
           </div>
