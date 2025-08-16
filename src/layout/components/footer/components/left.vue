@@ -1,16 +1,17 @@
-<script setup lang="ts">
-import { ref } from 'vue'
-import { useAudioPlayer } from '@/hooks/useAudioPlayer'
+<script setup lang="js">
+import { ref, inject, computed } from 'vue'
 import DrawerMusic from '@/components/DrawerMusic/index.vue'
 
-const { currentTrack } = useAudioPlayer()
+// 直接注入 audioPlayer
+const audioPlayer = inject('audioPlayer')
+const currentTrack = computed(() => audioPlayer?.currentTrack || {})
 const showDrawerMusic = ref(false)
 </script>
 
 <template>
   <div 
     class="flex items-center gap-2 w-64 cursor-pointer select-none hover:bg-hoverMenuBg transition-colors rounded-lg p-1" 
-    @click="showDrawerMusic = !showDrawerMusic"
+    @click="showDrawerMusic = showDrawerMusic"
   >
     <div class="min-w-12 max-w-12 h-full">
       <img

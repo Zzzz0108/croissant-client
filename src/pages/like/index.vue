@@ -1,15 +1,18 @@
-<script setup lang="ts">
+<script setup lang="js">
+import { ref, watch, onMounted, inject } from 'vue'
+import { useRoute } from 'vue-router'
 import { getFavoriteSongs } from '@/api/system'
-import type { Song } from '@/api/interface'
 import coverImg from '@/assets/cover.png'
 import { AudioStore } from '@/stores/modules/audio'
-import { useRoute } from 'vue-router'
 
 const route = useRoute()
 const audui = AudioStore()
-const { loadTrack, play } = useAudioPlayer()
 
-const songs = ref<Song[]>([])
+// 直接注入 audioPlayer
+const audioPlayer = inject('audioPlayer')
+const { loadTrack, play } = audioPlayer || {}
+
+const songs = ref([])
 const searchKeyword = ref('')
 const currentPage = ref(1)
 const pageSize = ref(10)
@@ -21,10 +24,6 @@ const playlist = ref({
     tags: []
 })
 
-interface PageResult {
-    items: Song[]
-    total: number
-}
 
 const getSongs = async () => {
     const res = await getFavoriteSongs({
@@ -35,7 +34,7 @@ const getSongs = async () => {
         album: ''
     })
     if (res.code === 0 && res.data) {
-        const pageData = res.data as PageResult
+        const pageData = res.data
         songs.value = pageData.items
         playlist.value.trackCount = pageData.total
         // 使用第一首歌的封面作为封面图
@@ -53,7 +52,7 @@ const handleSearch = () => {
 const handlePlayAll = async () => {
     audui.setAudioStore('trackList', [])
 
-    if (!songs.value.length) return
+    if (songs.value.length) return
 
     const result = songs.value.map(song => ({
         id: song.songId.toString(),

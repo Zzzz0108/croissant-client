@@ -1,12 +1,12 @@
-<script setup lang="ts">
+<script setup lang="js">
 import { formatTime } from '@/utils'
 import { Icon } from '@iconify/vue'
-import type { SongDetail } from '@/api/interface'
-import { ref, inject, type Ref } from 'vue'
-import { useAudioPlayer } from '@/hooks/useAudioPlayer'
+import { ref, inject, computed } from 'vue'
 import vinylImg from '@/assets/vinyl.png'
 import Recently from '../../layout/components/footer/components/recently.vue'
 
+// 直接注入 audioPlayer
+const audioPlayer = inject('audioPlayer')
 const {
   currentTrack,
   isPlaying,
@@ -17,7 +17,7 @@ const {
   togglePlayPause,
   seek,
   setPlayMode,
-} = useAudioPlayer()
+} = audioPlayer || {}
 
 const songDetail = inject<Ref<SongDetail | null>>('songDetail')
 
@@ -95,17 +95,17 @@ const togglePlayMode = () => {
             <Icon :icon="playModes[currentMode].icon" class="text-2xl" />
           </el-button>
         </el-tooltip>
-        <el-button text circle class="!p-3" @click="prevTrack">
+        <el-button text circle class="p-3" @click="prevTrack">
           <icon-solar:skip-previous-bold class="text-2xl" />
         </el-button>
-        <el-button text circle class="!p-3" @click="togglePlayPause">
+        <el-button text circle class="p-3" @click="togglePlayPause">
           <Icon
             :icon="isPlaying ? 'ic:round-pause-circle' : 'material-symbols:play-circle'"
             class="text-7xl"
             :color="'#2a68fa'"
           />
         </el-button>
-        <el-button text circle class="!p-3" @click="nextTrack">
+        <el-button text circle class="p-3" @click="nextTrack">
           <icon-solar:skip-previous-bold class="scale-x-[-1] text-2xl" />
         </el-button>
         <el-button text circle class="scale-125 text-primary-foreground">

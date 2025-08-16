@@ -1,10 +1,13 @@
-<script setup lang="ts">
+<script setup lang="js">
+import { ref, reactive, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import {
   getAllPlaylists,
   getFavoritePlaylists,
 } from '@/api/system'
 import coverImg from '@/assets/cover.png'
 import { ElNotification } from 'element-plus'
+import { processImageUrls } from '@/utils/minio'
 
 // 路由
 const router = useRouter()
@@ -21,7 +24,7 @@ const playlistsList = [
   { name: '我的收藏', value: 'favorite' }
 ]
 // 歌单tag
-const playTags = ref<{ name: string }[]>([])
+const playTags = ref([])
 const selectedTag = ref('全部')
 
 // 分页组件状态
@@ -63,7 +66,10 @@ const getPlaylists = async () => {
     }
 
     if (res.code === 0) {
-      playlists.value = res.data.items.map(item => ({
+      // 处理图片 URL，添加 -blob 后缀
+      const processedItems = processImageUrls(res.data.items || [], '330y330')
+      
+      playlists.value = processedItems.map(item => ({
         id: item.playlistId,
         name: item.title,
         coverImgUrl: item.coverUrl ?? coverImg,
@@ -92,7 +98,7 @@ const getPlaylists = async () => {
 }
 
 // 选择歌单
-const selectPlaylist = (playlist: string) => {
+const selectPlaylist = (playlist) => {
   selected.value = playlist
   getPlaylists()
 }
@@ -104,7 +110,7 @@ const handleSearch = () => {
 }
 
 // 处理搜索框按下回车
-const handleKeyPress = (e: KeyboardEvent) => {
+const handleKeyPress = () => {
   if (e.key === 'Enter') {
     handleSearch()
   }

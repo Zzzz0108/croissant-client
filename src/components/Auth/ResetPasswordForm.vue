@@ -1,26 +1,42 @@
-<script setup lang="ts">
-import { ref, reactive, onUnmounted } from 'vue'
-import { Message, Lock, Key } from '@element-plus/icons-vue'
-import type { FormInstance, FormRules } from 'element-plus'
-import { ElMessage } from 'element-plus'
+<script setup lang="js">
+import { ref, reactive } from 'vue'
+import { ElMessage, ElNotification } from 'element-plus'
 import { sendEmailCode, resetPassword } from '@/api/system'
 
 const emit = defineEmits(['success', 'switch-tab'])
 
 const loading = ref(false)
+const resetFormRef = ref()
+
+// 新增的状态
+const agree = ref(false)
+const showPassword = ref(false)
+const showConfirmPassword = ref(false)
+const isSending = ref(false)
 const countdown = ref(0)
-const resetFormRef = ref<FormInstance>()
-let timer: NodeJS.Timeout | null = null
+const isEmailValid = ref(false)
+const resetSuccess = ref(false)
+const message = ref('')
+const confirmPassword = ref('')
+let timer = null
 
 const resetForm = reactive({
   email: '',
   verificationCode: '',
-  newPassword: '',
-  repeatPassword: '',
+  password: '',
+})
+
+// 错误信息
+const errors = reactive({
+  email: '',
+  code: '',
+  password: '',
+  confirmPassword: '',
+  agree: ''
 })
 
 // 表单验证规则
-const resetRules = reactive<FormRules>({
+const resetRules = reactive({
   email: [
     { required: true, message: '请输入邮箱', trigger: 'blur' },
     { type: 'email', message: '请输入正确的邮箱格式', trigger: 'blur' },
@@ -33,181 +49,502 @@ const resetRules = reactive<FormRules>({
       trigger: 'blur',
     },
   ],
-  newPassword: [
+  password: [
     { required: true, message: '请输入新密码', trigger: 'blur' },
     {
-      pattern: /^(?![0-9]+$)(?![a-zA-Z]+$)[0-9A-Za-z\W]{8,18}$/,
+      pattern: /^(?=.*[0-9])(?=.*[a-zA-Z])[0-9A-Za-z\W]{8,18}$/,
       message: '密码格式：8-18位数字、字母、符号的任意两种组合',
-      trigger: 'blur',
-    },
-  ],
-  repeatPassword: [
-    { required: true, message: '请确认密码', trigger: 'blur' },
-    {
-      validator: (rule: any, value: string, callback: Function) => {
-        if (value !== resetForm.newPassword) {
-          callback(new Error('两次输入的密码不一致'))
-        } else {
-          callback()
-        }
-      },
       trigger: 'blur',
     },
   ],
 })
 
+// 验证邮箱
+const validateEmail = () => {
+  if (!resetForm.email) {
+    errors.email = '请输入邮箱地址'
+    isEmailValid.value = false
+    return
+  }
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  if (!emailRegex.test(resetForm.email)) {
+    errors.email = '请输入正确的邮箱格式'
+    isEmailValid.value = false
+    return
+  }
+
+  errors.email = ''
+  isEmailValid.value = true
+}
+
+// 验证验证码
+const validateCode = () => {
+  if (!resetForm.verificationCode) {
+    errors.code = '请输入验证码'
+    return
+  }
+
+  const codeRegex = /^[0-9a-zA-Z]{6}$/
+  if (!codeRegex.test(resetForm.verificationCode)) {
+    errors.code = '验证码格式：6位字符（大小写字母、数字）'
+    return
+  }
+
+  errors.code = ''
+}
+
+// 验证密码
+const validatePassword = () => {
+  if (!resetForm.password) {
+    errors.password = '请输入新密码'
+    return
+  }
+
+  if (resetForm.password.length < 6) {
+    errors.password = '密码至少6位字符'
+    return
+  }
+
+  errors.password = ''
+}
+
+// 验证确认密码
+const validateConfirmPassword = () => {
+  if (!confirmPassword.value) {
+    errors.confirmPassword = '请确认新密码'
+    return
+  }
+
+  if (confirmPassword.value !== resetForm.password) {
+    errors.confirmPassword = '两次输入的密码不一致'
+    return
+  }
+
+  errors.confirmPassword = ''
+}
+
+// 清除错误
+const clearError = (field) => {
+  errors[field] = ''
+}
+
 // 发送验证码
 const handleSendCode = async () => {
+  validateEmail()
+  if (!isEmailValid.value) return
+
   try {
-    if (!resetForm.email) {
-      ElMessage.warning('请先输入邮箱')
-      return
-    }
+    isSending.value = true
+    countdown.value = 60
+    
     const response = await sendEmailCode(resetForm.email)
     if (response.code === 0) {
-      ElMessage.success('验证码已发送')
-      countdown.value = 60
-      timer = setInterval(() => {
-        countdown.value--
-        if (countdown.value <= 0) {
-          if (timer) {
-            clearInterval(timer)
-            timer = null
-          }
-        }
-      }, 1000)
+      ElNotification({
+        title: '验证码发送成功',
+        message: '验证码已发送到您的邮箱',
+        type: 'success',
+        duration: 3000
+      })
     } else {
-      ElMessage.error(response.message)
+      ElNotification({
+        title: '验证码发送失败',
+        message: response.message || '发送验证码失败',
+        type: 'error',
+        duration: 4000
+      })
+      resetSuccess.value = false
     }
-  } catch (error: any) {
-    ElMessage.error(error.message || '发送验证码失败')
+    
+    // 倒计时逻辑
+    timer = setInterval(() => {
+      countdown.value--
+      if (countdown.value <= 0) {
+        clearInterval(timer)
+        isSending.value = false
+      }
+    }, 1000)
+  } catch (error) {
+    ElNotification({
+      title: '发送验证码异常',
+      message: error.message || '发送验证码失败',
+      type: 'error',
+      duration: 4000
+    })
+    resetSuccess.value = false
+  } finally {
+    isSending.value = false
   }
 }
 
 // 重置密码处理
 const handleReset = async () => {
   if (!resetFormRef.value) return
-  await resetFormRef.value.validate(async (valid, fields) => {
+  
+  // 验证所有必填字段
+  validateEmail()
+  validateCode()
+  validatePassword()
+  validateConfirmPassword()
+  
+  if (!agree.value) {
+    errors.agree = '请同意服务条款和隐私政策'
+    return
+  }
+  
+  // 检查是否有错误
+  const hasErrors = Object.values(errors).some(error => error !== '')
+  if (hasErrors) return
+
+  await resetFormRef.value.validate(async (valid) => {
     if (valid) {
       loading.value = true
       try {
         const response = await resetPassword(resetForm)
+        
         if (response.code === 0) {
-          ElMessage.success('密码重置成功，请登录')
-          emit('switch-tab', 'login')
+  
+          ElNotification({
+            title: '密码重置成功',
+            message: '密码重置成功！请使用新密码登录',
+            type: 'success',
+            duration: 3000
+          })
+          emit('success')
         } else {
-          ElMessage.error(response.message)
+          resetSuccess.value = false
+          ElNotification({
+            title: '密码重置失败',
+            message: response.message || '密码重置失败',
+            type: 'error',
+            duration: 4000
+          })
         }
-      } catch (error: any) {
-        ElMessage.error(error.message || '密码重置失败')
+      } catch (error) {
+        console.error('重置密码异常:', error)
+        resetSuccess.value = false
+        ElNotification({
+          title: '重置密码异常',
+          message: error.message || '重置密码失败',
+          type: 'error',
+          duration: 4000
+        })
       } finally {
         loading.value = false
       }
-    } else {
-      console.log('验证失败:', fields)
     }
   })
 }
 
 function switchToLogin() {
-  // 通知父组件切换到登录标签
   emit('switch-tab', 'login')
 }
 
-// 组件卸载时清除定时器
-onUnmounted(() => {
-  if (timer) {
-    clearInterval(timer)
-    timer = null
-  }
+function switchToRegister() {
+  emit('switch-tab', 'register')
+}
+
+// 清理定时器
+import { onBeforeUnmount } from 'vue'
+onBeforeUnmount(() => {
+  if (timer) clearInterval(timer)
 })
 </script>
 
 <template>
-  <div class="reset-container">
-    <p class="form-subtitle">我们将向您的邮箱发送验证码以重置密码</p>
+  <div class="reset-page">
+    <div class="wrapper">
 
-    <el-form ref="resetFormRef" :model="resetForm" :rules="resetRules" label-width="0" size="large"
-      @keyup.enter="handleReset">
-      <el-form-item prop="email">
-        <el-input v-model="resetForm.email" placeholder="邮箱" :prefix-icon="Message">
-          <template #append>
-            <el-button :disabled="!!countdown || loading" @click="handleSendCode">
-              {{ countdown ? `${countdown}s后重试` : '获取验证码' }}
-            </el-button>
-          </template>
-        </el-input>
-      </el-form-item>
 
-      <el-form-item prop="verificationCode" class="mt-6">
-        <el-input v-model="resetForm.verificationCode" placeholder="验证码" :prefix-icon="Key" />
-      </el-form-item>
+      <div class="card">
+        <div class="main">
+          <div class="tab">
+            通过邮箱验证码重置您的密码，确保账号安全。
+          </div>
 
-      <el-form-item prop="newPassword" class="mt-6">
-        <el-input v-model="resetForm.newPassword" type="password" placeholder="新密码" :prefix-icon="Lock" show-password />
-      </el-form-item>
+          <!-- 邮箱输入 -->
+          <div class="input-box" :class="{ 'input-error': errors.email }">
+            <span class="icon">📧</span>
+            <input 
+              type="email" 
+              placeholder="邮箱地址" 
+              v-model="resetForm.email" 
+              @input="validateEmail"
+            />
+          </div>
+          <span class="error-message" v-if="errors.email">{{ errors.email }}</span>
 
-      <el-form-item prop="repeatPassword" class="mt-6">
-        <el-input v-model="resetForm.repeatPassword" type="password" placeholder="确认密码" :prefix-icon="Lock"
-          show-password />
-      </el-form-item>
+          <!-- 验证码 + 发送按钮 -->
+          <div class="input-group">
+            <div class="input-box" style="flex: 1" :class="{ 'input-error': errors.code }">
+              <span class="icon">📱</span>
+              <input 
+                placeholder="验证码" 
+                v-model="resetForm.verificationCode" 
+                @input="validateCode"
+              />
+            </div>
+            <button 
+              class="code-button" 
+              @click="handleSendCode" 
+              :disabled="isSending || !isEmailValid"
+            >
+              {{ isSending ? `${countdown}s` : '发送验证码' }}
+            </button>
+          </div>
+          <span class="error-message" v-if="errors.code">{{ errors.code }}</span>
 
-      <el-form-item class="mt-6">
-        <el-button class="submit-btn" type="primary" :loading="loading" @click="handleReset">
-          重置密码
-        </el-button>
-      </el-form-item>
-    </el-form>
+          <!-- 新密码输入 -->
+          <div class="input-box" :class="{ 'input-error': errors.password }">
+            <span class="icon">🔒</span>
+            <input 
+              :type="showPassword ? 'text' : 'password'" 
+              placeholder="新密码" 
+              v-model="resetForm.password" 
+              @input="validatePassword"
+            />
+            <span class="see" @click="showPassword = !showPassword">
+              {{ showPassword ? '👁️' : '🙈' }}
+            </span>
+          </div>
+          <span class="error-message" v-if="errors.password">{{ errors.password }}</span>
 
-    <p class="login-text">
-      记起密码了？
-      <a href="#" @click.prevent="switchToLogin">返回登录</a>
-    </p>
+          <!-- 确认新密码输入 -->
+          <div class="input-box" :class="{ 'input-error': errors.confirmPassword }">
+            <span class="icon">🔒</span>
+            <input 
+              :type="showConfirmPassword ? 'text' : 'password'" 
+              placeholder="确认新密码" 
+              v-model="confirmPassword" 
+              @input="validateConfirmPassword"
+            />
+            <span class="see" @click="showConfirmPassword = !showConfirmPassword">
+              {{ showConfirmPassword ? '👁️' : '🙈' }}
+            </span>
+          </div>
+          <span class="error-message" v-if="errors.confirmPassword">{{ errors.confirmPassword }}</span>
+
+          <!-- 协议勾选 -->
+          <div class="agreement">
+            <input 
+              type="checkbox" 
+              id="agree" 
+              v-model="agree" 
+              @change="clearError('agree')"
+            />
+            <label for="agree">
+              重置密码即表示您同意我们的
+              <a href="#">服务条款</a>和
+              <a href="#">隐私政策</a>
+            </label>
+          </div>
+          <span class="error-message" v-if="errors.agree">{{ errors.agree }}</span>
+
+          <!-- 重置按钮 -->
+          <button 
+            class="submit" 
+            @click="handleReset" 
+            :disabled="loading"
+          >
+            <span v-if="!loading">重置密码</span>
+            <span v-else>重置中...</span>
+          </button>
+
+          <!-- 底部链接 -->
+          <div class="footer-links">
+            <a href="#" @click.prevent="switchToLogin">返回登录</a>
+            <a href="#" @click.prevent="switchToRegister">注册账号</a>
+          </div>
+
+
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <style scoped>
-.reset-container {
+.reset-page {
+  display: flex;
+  justify-content: center;
+  height: 100vh;
+  background: #f5f6fa;
+}
+
+.wrapper {
   width: 100%;
-  max-width: 400px;
-  margin: 0 auto;
-  padding: 20px;
+  max-width: 432px;
+  min-width: 320px;
+  padding: clamp(16px, 3vw, 24px) 0 0;
 }
 
-.form-subtitle {
-  color: #666;
-  margin-bottom: 24px;
-  font-size: 14px;
-}
-
-:deep(.el-form-item) {
-  margin-bottom: 20px;
-}
-
-:deep(.el-input__wrapper) {
-  border-radius: 8px;
-}
-
-.submit-btn {
-  width: 100%;
-  border-radius: 8px;
-  height: 40px;
-  font-size: 16px;
-}
-
-.login-text {
+.head {
+  margin-bottom: 32px;
+  font-family: "Lobster Two", cursive;
+  font-size: 48px;
+  font-weight: 400;
+  color: #08f;
   text-align: center;
-  margin-top: 16px;
-  color: #666;
+  font-style: italic;
 }
 
-.login-text a {
-  color: #2a68fa;
-  font-weight: 600;
+.card {
+  background: rgba(255, 255, 255, 0.1);
+  padding: clamp(8px, 2vw, 12px);
+  border-radius: clamp(12px, 3vw, 16px);
+  display: flex;
+  min-height: clamp(380px, 60vh, 420px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: 0 0 1px rgba(0, 0, 0, 0.2), 0 0 4px rgba(0, 0, 0, 0.02), 0 12px 36px rgba(0, 0, 0, 0.06);
+}
+
+.main {
+  flex-direction: column;
+  flex-grow: 1;
+  width: min(408px, 100vw - clamp(16px, 4vw, 24px));
+  min-width: 300px;
+  padding: clamp(16px, 4vw, 24px) clamp(16px, 4vw, 24px) clamp(8px, 2vw, 12px);
+  display: flex;
+  gap: clamp(12px, 3vw, 16px);
+}
+
+.tab {
+  font-size: 12px;
+  line-height: 140%;
+  color: #a3a3a3;
+  margin-bottom: 8px;
+}
+
+/* 输入框样式 */
+.input-box {
+  display: flex;
+  align-items: center;
+  background-color: #fff;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 0 12px;
+  height: 40px;
+  gap: 8px;
+  transition: border-color 0.3s;
+}
+
+.input-box.input-error {
+  border-color: #ff4d4f;
+}
+
+.input-box input {
+  border: none;
+  outline: none;
+  flex: 1;
+  font-size: 14px;
+  background-color: transparent;
+}
+
+.input-box:focus-within {
+  border: 2px solid #08f;
+}
+
+/* 错误信息 */
+.error-message {
+  color: #ff4d4f;
+  font-size: 12px;
+  margin-top: -8px;
+  height: 16px;
+}
+
+/* 图标样式 */
+.icon {
+  font-size: 18px;
+}
+
+.see {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  font-size: 18px;
+}
+
+/* 验证码按钮 */
+.input-group {
+  display: flex;
+  gap: 10px;
+}
+
+.code-button {
+  background: #fff;
+  border: 1px solid #ccc;
+  color: #000;
+  border-radius: 8px;
+  padding: 0 16px;
+  height: 40px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.code-button:hover:not(:disabled) {
+  background-color: #f0f0f0;
+}
+
+.code-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* 重置按钮 */
+.submit {
+  background-color: #08f;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 12px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: opacity 0.3s;
+}
+
+.submit:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* 协议勾选 */
+.agreement {
+  display: flex;
+  align-items: flex-start;
+  font-size: 12px;
+  color: #666;
+  gap: 6px;
+  line-height: 1.4;
+  margin-top: 8px;
+}
+
+.agreement input[type="checkbox"] {
+  accent-color: #08f;
+  margin-top: 2px;
+}
+
+.agreement a {
+  color: #08f;
   text-decoration: none;
 }
 
-.login-text a:hover {
-  text-decoration: underline;
+/* 底部链接 */
+.footer-links {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
 }
+
+.footer-links a {
+  color: #08f;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+
 </style>

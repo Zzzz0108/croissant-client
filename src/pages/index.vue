@@ -1,16 +1,23 @@
-<script setup lang="ts">
+<script setup lang="js">
+import { ref, watch, onMounted, inject } from 'vue'
+import { useRouter } from 'vue-router'
 import { getRecommendedPlaylists, getRecommendedSongs, getBanner } from '@/api/system'
 import coverImg from '@/assets/cover.png'
 import { formatTime, replaceUrlParams } from '@/utils'
+import { processImageUrls, processAudioUrls } from '@/utils/minio'
 import { ElNotification } from 'element-plus'
 import { UserStore } from '@/stores/modules/user'
+import { AudioStore } from '@/stores/modules/audio'
+
 const router = useRouter()
 const audio = AudioStore()
 const user = UserStore()
 
-const { loadTrack, play } = useAudioPlayer()
+// 直接注入 audioPlayer
+const audioPlayer = inject('audioPlayer')
+const { loadTrack, play } = audioPlayer || {}
 
-const bannerList = ref<{ bannerId: number; bannerUrl: string }[]>([])
+const bannerList = ref([])
 
 // 推荐歌单
 const recommendedPlaylist = ref([])
@@ -53,24 +60,35 @@ const fetchBannerData = async () => {
 
 // 获取推荐数据
 const getRecommendedData = async () => {
-  // 获取推荐歌单
-  const result = await getRecommendedPlaylists()
-  if (result.code === 0 && Array.isArray(result.data)) {
-    recommendedPlaylist.value = result.data.map((item) => ({
-      playlistId: item.playlistId,
-      title: item.title,
-      coverUrl: item.coverUrl ?? coverImg,
-    }))
-  } else {
+  try {
+    // 获取推荐歌单
+    const result = await getRecommendedPlaylists()
+    if (result.code === 0 && Array.isArray(result.data)) {
+      // 处理图片 URL
+      const processedPlaylists = processImageUrls(result.data)
+      recommendedPlaylist.value = processedPlaylists.map((item) => ({
+        playlistId: item.playlistId,
+        title: item.title,
+        coverUrl: item.coverUrl ?? coverImg,
+      }))
+    } else {
+      ElNotification({
+        type: 'error',
+        message: '获取推荐歌单失败',
+        duration: 2000,
+      })
+    }
+
+    // 获取推荐歌曲
+    await handleRefreshSongs()
+  } catch (error) {
+    console.error('获取推荐数据失败:', error)
     ElNotification({
       type: 'error',
-      message: '获取推荐歌单失败',
+      message: '获取推荐数据失败',
       duration: 2000,
     })
   }
-
-  // 获取推荐歌曲
-  handleRefreshSongs()
 }
 
 onMounted(async () => {
@@ -81,25 +99,45 @@ onMounted(async () => {
 })
 
 const handleRefreshSongs = async () => {
-  const result = await getRecommendedSongs()
-  if (result.code === 0 && Array.isArray(result.data)) {
-    recommendedSongList.value = result.data.map((item) => ({
-      id: item.songId,
-      name: item.songName,
-      artists: [
-        {
-          name: item.artistName,
+  try {
+    const result = await getRecommendedSongs()
+    console.log('获取推荐歌曲结果:', result)
+    
+    if (result.code === 0 && Array.isArray(result.data)) {
+      // 处理图片和音频 URL
+      const processedSongs = processImageUrls(result.data)
+      processAudioUrls(processedSongs)
+      
+      console.log('处理后的歌曲数据:', processedSongs)
+      
+      recommendedSongList.value = processedSongs.map((item) => ({
+        id: item.songId,
+        name: item.songName,
+        artists: [
+          {
+            name: item.artistName,
+          },
+        ],
+        album: {
+          name: item.album,
+          picUrl: item.coverUrl,
         },
-      ],
-      album: {
-        name: item.album,
-        picUrl: item.coverUrl,
-      },
-      duration: item.duration,
-      audioUrl: item.audioUrl,
-      likeStatus: item.likeStatus || 0  // 从服务端获取收藏状态
-    }))
-  } else {
+        duration: item.duration,
+        audioUrl: item.audioUrl,
+        likeStatus: item.likeStatus || 0  // 从服务端获取收藏状态
+      }))
+      
+      console.log('转换后的推荐歌曲列表:', recommendedSongList.value)
+    } else {
+      console.error('获取推荐歌曲失败:', result)
+      ElNotification({
+        type: 'error',
+        message: '获取推荐歌曲失败',
+        duration: 2000,
+      })
+    }
+  } catch (error) {
+    console.error('获取推荐歌曲失败:', error)
     ElNotification({
       type: 'error',
       message: '获取推荐歌曲失败',
@@ -109,11 +147,11 @@ const handleRefreshSongs = async () => {
 }
 
 // 转换歌曲实体
-const convertToTrackModel = (song: any) => {
+const convertToTrackModel = (song) => {
   return {
     id: song.id.toString(),
     title: song.name,
-    artist: song.artists.map((artist: any) => artist.name).join(', '),
+    artist: song.artists.map((artist) => artist.name).join(', '),
     album: song.album.name,
     cover: song.album.picUrl || '',
     url: song.audioUrl,
@@ -122,19 +160,30 @@ const convertToTrackModel = (song: any) => {
   }
 }
 
-const handlePlaylclick = async (row: any) => {
+const handlePlaylclick = async (row) => {
+  console.log('点击播放歌曲:', row)
+  console.log('当前推荐歌曲列表:', recommendedSongList.value)
+  
   // 将所有推荐歌曲转换为 trackModel
   const allTracks = recommendedSongList.value
     .map(song => convertToTrackModel(song))
-    .filter(track => track !== null)
+    .filter(track => track != null)  // 修复：过滤掉 null 值
+
+  console.log('转换后的播放列表:', allTracks)
 
   // 找到当前选中歌曲的索引
   const selectedIndex = recommendedSongList.value.findIndex(song => song.id === row.id)
+  console.log('选中的歌曲索引:', selectedIndex)
 
   // 清空现有播放列表并添加所有歌曲
   audio.setAudioStore('trackList', allTracks)
   // 设置当前播放索引为选中的歌曲
   audio.setAudioStore('currentSongIndex', selectedIndex)
+
+  console.log('音频Store状态:', {
+    trackList: audio.trackList,
+    currentSongIndex: audio.currentSongIndex
+  })
 
   // 播放
   await loadTrack()
@@ -142,7 +191,7 @@ const handlePlaylclick = async (row: any) => {
 }
 
 // 判断是否是当前播放的歌曲
-const isCurrentPlaying = (songId: number) => {
+const isCurrentPlaying = (songId) => {
   const currentTrack = audio.trackList[audio.currentSongIndex]
   return currentTrack && Number(currentTrack.id) === songId
 }
@@ -221,7 +270,7 @@ const isCurrentPlaying = (songId: number) => {
               <div class="truncate text-left ml-1">
                 <!-- 歌曲名称 -->
                 <h3 class="font-medium">{{ item.name }}</h3>
-                <!-- 艺术家 -->
+                                  <!-- 艺术家 -->
                 <p class="text-sm text-muted-foreground line-clamp-1">
                   {{item.artists.map((item) => item.name).join(' ')}}
                 </p>

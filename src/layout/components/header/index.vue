@@ -1,11 +1,15 @@
-<script setup lang="ts">
+<script setup lang="js">
+import { ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { Icon } from '@iconify/vue'
 import Avatar from './components/avatar.vue'
+import { useDark, useToggle } from '@vueuse/core'
+import { themeStore } from '@/stores/modules/theme'
+
 const route = useRoute()
 const router = useRouter()
 const currentIcon = ref('material-symbols:wb-sunny-outline-rounded')
 const theme = themeStore()
-import { useDark, useToggle } from '@vueuse/core'
 
 const searchText = ref('')
 
@@ -18,7 +22,7 @@ const isDark = useDark({
 const toggleDark = useToggle(isDark)
 
 const toggleMode = () => {
-  theme.setDark(!isDark.value)
+  theme.setDark(isDark.value)
   toggleDark()
 }
 
@@ -38,7 +42,7 @@ watch(
   () => route.query,
   (newValue) => {
     if (newValue.query) {
-      searchText.value = newValue.query as string
+      searchText.value = newValue.query
     }
   },
   { immediate: true }
@@ -52,7 +56,7 @@ watch(
         >Vibe Music</span
       >
     </button>
-    <!-- 输入框和头像 -->
+            <!-- 输入框和头像 -->
     <div class="flex items-center gap-3">
       <div class="relative mr-6">
         <Icon

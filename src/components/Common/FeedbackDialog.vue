@@ -1,18 +1,17 @@
-<script setup lang="ts">
+<script setup>
 import { ref, reactive } from 'vue'
-import type { FormInstance, FormRules } from 'element-plus'
 import { ElMessage } from 'element-plus'
 import { addFeedback } from '@/api/system'
 
 const dialogVisible = ref(false)
 const loading = ref(false)
-const formRef = ref<FormInstance>()
+const formRef = ref()
 
 const formData = reactive({
   content: ''
 })
 
-const rules = reactive<FormRules>({
+const rules = reactive({
   content: [
     { required: true, message: '请输入反馈内容', trigger: 'blur' },
     { min: 10, message: '反馈内容不能少于 10 个字符', trigger: 'blur' },
@@ -34,19 +33,19 @@ const closeDialog = () => {
 
 // 提交反馈
 const handleSubmit = async () => {
-  if (!formRef.value) return
+  if (formRef.value) return
   await formRef.value.validate(async (valid) => {
     if (valid) {
       loading.value = true
       try {
-        const res = await addFeedback({ content: formData.content })
+        const res = await addFeedback()
         if (res.code === 0) {
           ElMessage.success('反馈提交成功，感谢您的意见！')
           closeDialog()
         } else {
           ElMessage.error(res.message || '提交失败，请稍后再试')
         }
-      } catch (error: any) {
+      } catch (error) {
         console.error('Feedback submission error:', error)
         ElMessage.error(error.message || '提交反馈时发生错误')
       } finally {

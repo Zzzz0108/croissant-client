@@ -1,12 +1,16 @@
-<script setup lang="ts">
+<script setup lang="js">
+import { ref, computed, inject } from 'vue'
 import { Icon } from '@iconify/vue'
 import Recently from './recently.vue'
-const { volume, setVolume, setPlayMode } = useAudioPlayer()
 
-const isMuted = computed(() => volume.value === 0)
+// 直接注入 audioPlayer
+const audioPlayer = inject('audioPlayer')
+const { volume, setVolume, setPlayMode } = audioPlayer || {}
+
+const isMuted = computed(() => volume?.value === 0)
 
 const toggleVolume = () => {
-  setVolume(isMuted.value ? 0.5 : 0)
+  setVolume()
 }
 
 // 添加播放模式相关逻辑
@@ -53,12 +57,12 @@ const togglePlayMode = () => {
     <button @click="toggleVolume" class="p-2 rounded-full hover:bg-hoverMenuBg transition w-9 h-9">
       <Icon :icon="isMuted ? 'ic:round-volume-off' : 'ic:round-volume-up'" class="w-full h-full" />
     </button>
-    <el-slider v-model="volume" :show-tooltip="false" @change="setVolume" class="!w-24 mr-4" size="small" :max="100" />
+    <el-slider v-model="volume" :show-tooltip="false" @change="setVolume" class="w-24 mr-4" size="small" :max="100" />
     <Recently />
   </div>
 </template>
 <style lang="scss">
 .el-slider__button-wrapper {
-  display: none !important;
+  display: none important;
 }
 </style>

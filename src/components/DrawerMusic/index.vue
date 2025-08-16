@@ -1,18 +1,16 @@
-<script setup lang="ts">
+<script setup lang="js">
 import Left from './left.vue'
 import Right from './right.vue'
 import { useDark, useToggle } from '@vueuse/core'
 import { useDateFormat, useNow } from '@vueuse/core'
 import { getSongDetail } from '@/api/system'
-import type { SongDetail } from '@/api/interface'
-import { ref, provide } from 'vue'
-import { useAudioPlayer } from '@/hooks/useAudioPlayer'
+import { ref, provide, watch, inject, computed } from 'vue'
 import { themeStore } from '@/stores/modules/theme'
 
 const formatted = useDateFormat(useNow(), 'HH:mm:ss')
 const theme = themeStore()
-const showDrawer = defineModel<boolean>()
-const songDetail = ref<SongDetail | null>(null)
+const showDrawer = defineModel()
+const songDetail = ref(null)
 
 const isDark = useDark({
   selector: 'html',
@@ -22,10 +20,13 @@ const isDark = useDark({
 })
 const toggleDark = useToggle(isDark)
 const toggleMode = () => {
-  theme.setDark(!isDark.value)
+  theme.setDark(isDark.value)
   toggleDark()
 }
-const { currentTrack } = useAudioPlayer()
+
+// 直接注入 audioPlayer
+const audioPlayer = inject('audioPlayer')
+const currentTrack = computed(() => audioPlayer?.currentTrack || {})
 
 // 监听 currentTrack 的变化，获取歌曲详情
 watch(() => currentTrack.value.id, async (newId) => {
@@ -34,7 +35,7 @@ watch(() => currentTrack.value.id, async (newId) => {
       const res = await getSongDetail(Number(newId))
       if (res.code === 0 && res.data) {
         // 确保返回的数据符合 SongDetail 接口
-        const songData = res.data as unknown as SongDetail
+        const songData = res.data
         if (
           'songId' in songData &&
           'songName' in songData &&

@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script setup lang="js">
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { UserStore } from '@/stores/modules/user'
@@ -10,7 +10,7 @@ const router = useRouter()
 const authVisible = ref(false)
 
 onMounted(() => {
-  if (!userStore.isLoggedIn) {
+  if (userStore.isLoggedIn) {
     ElMessage.warning('请先登录')
     authVisible.value = true
     // 阻止路由跳转

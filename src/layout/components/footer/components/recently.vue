@@ -1,12 +1,18 @@
-<script setup lang="ts">
+<script setup lang="js">
+import { ref, inject } from 'vue'
 import { formatMillisecondsToTime } from '@/utils'
 import { trackModel } from '@/stores/interface'
+import { AudioStore } from '@/stores/modules/audio'
+
 const audio = AudioStore()
-const { loadTrack, play, audioElement } = useAudioPlayer()
+
+// 直接注入 audioPlayer
+const audioPlayer = inject('audioPlayer')
+const { loadTrack, play, audioElement } = audioPlayer || {}
 
 const mouseOverIndex = ref(-1) // 用于跟踪鼠标悬停的索引
 
-const playMusic = async (song: trackModel) => {
+const playMusic = async () => {
   audio.addTracks(song)
   // 加载
   await loadTrack()
@@ -21,7 +27,7 @@ const handleClearAll = () => {
 }
 </script>
 <template>
-  <el-popover :width="450" trigger="click" placement="top-end" popper-class="!rounded-lg !p-0">
+  <el-popover :width="450" trigger="click" placement="top-end" popper-class="rounded-lg p-0">
     <template #reference>
       <div class="flex items-center">
         <button class="p-2 rounded-full hover:bg-hoverMenuBg transition w-9">

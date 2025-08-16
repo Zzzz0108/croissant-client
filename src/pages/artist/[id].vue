@@ -1,19 +1,11 @@
-<script setup lang="ts">
+<script setup lang="js">
+import { computed, watch } from 'vue'
 import { getArtistDetail } from '@/api/system'
 import Table from '@/components/Table.vue'
 import { useArtistStore } from '@/stores/modules/artist'
 import { ElMessage } from 'element-plus'
 import { useRoute } from 'vue-router'
 
-interface ArtistDetailResponse {
-    artistId: number
-    artistName: string
-    avatar: string
-    birth: string
-    area: string
-    introduction: string
-    songs: any[]
-}
 
 const route = useRoute()
 const artistStore = useArtistStore()
@@ -29,7 +21,7 @@ const fetchArtistDetail = async () => {
         const res = await getArtistDetail(numericId)
 
         if (res.code === 0 && res.data) {
-            const artistData = res.data as ArtistDetailResponse
+            const artistData = res.data
             artistStore.setArtistInfo({
                 artistId: artistData.artistId,
                 artistName: artistData.artistName || '未知歌手',
@@ -57,8 +49,8 @@ watch(
 )
 
 // 格式化生日
-const formatBirth = (birth: string) => {
-    if (!birth) return ''
+const formatBirth = (birth) => {
+    if (birth) return ''
     return new Date(birth).toLocaleDateString()
 }
 </script>

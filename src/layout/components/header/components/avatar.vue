@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script setup lang="js">
 import { ref } from 'vue'
 import { UserStore } from '@/stores/modules/user'
 import AuthTabs from '@/components/Auth/AuthTabs.vue'
@@ -11,18 +11,18 @@ import { useRouter } from 'vue-router'
 const showLogin = ref(false)
 const user = UserStore()
 const router = useRouter()
-const feedbackDialogRef = ref<InstanceType<typeof FeedbackDialog> | null>(null)
+const feedbackDialogRef = ref(null)
 
 const handleLogout = async () => {
   try {
-    const response = await logout()
-    if (response.code === 0) {
-      user.clearUserInfo()
-      ElMessage.success('退出登录成功')
+    const result = await user.userLogout()
+    if (result.success) {
+      ElMessage.success(result.message)
+      // 清除用户信息已经在userLogout中处理
     } else {
-      ElMessage.error(response.message || '退出失败')
+      ElMessage.error(result.message)
     }
-  } catch (error: any) {
+  } catch (error) {
     console.error('退出登录错误:', error)
     ElMessage.error(error.message || '退出失败')
     // 即使请求失败也清除用户信息
@@ -36,7 +36,7 @@ const openFeedbackDialog = () => {
 </script>
 
 <template>
-  <el-dropdown v-if="user.userInfo && user.userInfo.userId" class="cursor-pointer">
+  <el-dropdown v-if="user.isAuthenticated" class="cursor-pointer">
     <span class="flex items-center">
       <el-avatar :src="user.userInfo.avatarUrl || defaultAvatar" class="mr-1" shape="circle" :size="32" />
       <span class="text-sm font-medium mr-2 ml-1">{{ user.userInfo.username }}</span>

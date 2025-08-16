@@ -1,6 +1,6 @@
 import globals from 'globals' //https://eslint.org/docs/latest/use/configure/language-options
 import pluginJs from '@eslint/js'
-import tseslint from 'typescript-eslint' //https://typescript-eslint.io/getting-started/
+// import tseslint from 'typescript-eslint' //https://typescript-eslint.io/getting-started/
 import pluginVue from 'eslint-plugin-vue' //https://eslint.vuejs.org/user-guide/
 import vueEslintParser from 'vue-eslint-parser' // vue文件解析器
 import { FlatCompat } from '@eslint/eslintrc'
@@ -21,16 +21,15 @@ export default [
       parser: vueEslintParser, // 使用vue解析器，这个可以识别vue文件
       parserOptions: {
         ecmaVersion: 'latest',
-        parser: tseslint.parser, // 在vue文件上使用ts解析器
+        // parser: tseslint.parser, // 在vue文件上使用ts解析器
         sourceType: 'module',
       },
     },
   },
   /** js推荐配置 */
   pluginJs.configs.recommended,
-  /** 继承自动导入配置 */
-  ...compat.extends('./src/auto-import/eslintrc-auto-import.json'),
-  ...tseslint.configs.recommended,
+  /** 继承自动导入配置 - 已移除 TypeScript 相关配置 */
+  // ...tseslint.configs.recommended,
   /** vue推荐配置 */
   ...pluginVue.configs['flat/essential'],
   eslintPluginPrettierRecommended,
@@ -49,7 +48,7 @@ export default [
           // endOfLine: "auto"
         },
       ],
-      '@typescript-eslint/no-explicit-any': ['off'],
+      // '@typescript-eslint/no-explicit-any': ['off'],
     },
   },
   // 忽略文件
@@ -57,7 +56,7 @@ export default [
     ignores: [
       'README.md',
       '**/dist',
-      './src/main.ts',
+      './src/main.js',
       '.vscode',
       '.idea',
       '*.sh',

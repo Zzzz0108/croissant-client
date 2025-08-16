@@ -47,15 +47,15 @@ _（本项目界面设计借鉴了
 
 ## 代码仓库 ⭐
 
-- [GitHub 代码仓库](https://github.com/Alex-LiSun/vibe-music-client)
+- [GitHub 代码仓库](https://github.com/Alex-LiSun/croissant-client)
 
 ## 安装与启动 🚀
 
 1.  **克隆项目**
 
     ```bash
-    git clone https://github.com/Alex-LiSun/vibe-music-client.git
-    cd vibe-music-client
+    git clone https://github.com/Alex-LiSun/croissant-client.git
+cd croissant-client
     ```
 
 2.  **安装依赖** (推荐使用 `pnpm`)
@@ -128,10 +128,10 @@ _（本项目界面设计借鉴了
 
 ## 项目截图 📷
 
-![登录界面](https://github.com/Alex-LiSun/vibe-music-client/blob/main/img/client_login.png)
-![推荐界面](https://github.com/Alex-LiSun/vibe-music-client/blob/main/img/client_home.png)
-![歌曲推荐界面](https://github.com/Alex-LiSun/vibe-music-client/blob/main/img/client_recommended.png)
-![曲库界面](https://github.com/Alex-LiSun/vibe-music-client/blob/main/img/client_song_library.png)
+![登录界面](https://github.com/Alex-LiSun/croissant-client/blob/main/img/client_login.png)
+![推荐界面](https://github.com/Alex-LiSun/croissant-client/blob/main/img/client_home.png)
+![歌曲推荐界面](https://github.com/Alex-LiSun/croissant-client/blob/main/img/client_recommended.png)
+![曲库界面](https://github.com/Alex-LiSun/croissant-client/blob/main/img/client_song_library.png)
 ![歌手列表界面](https://github.com/Alex-LiSun/vibe-music-client/blob/main/img/client_artist.png)
 ![歌手详情界面](https://github.com/Alex-LiSun/vibe-music-client/blob/main/img/client_artist_detail.png)
 ![歌单列表界面](https://github.com/Alex-LiSun/vibe-music-client/blob/main/img/client_playlist.png)

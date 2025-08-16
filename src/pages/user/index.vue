@@ -1,10 +1,10 @@
-<script setup lang="ts">
+<script setup lang="js">
 import { ref, reactive, onMounted } from 'vue'
-import type { FormInstance, FormRules } from 'element-plus'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { UserStore } from '@/stores/modules/user'
 import defaultAvatar from '@/assets/user.jpg'
 import { updateUserInfo, updateUserAvatar, deleteUser, getUserInfo } from '@/api/system'
+import { uploadToMinio } from '@/utils/minio'
 import 'vue-cropper/dist/index.css'
 import { VueCropper } from "vue-cropper";
 import { useRouter } from 'vue-router'
@@ -13,10 +13,10 @@ import AuthTabs from '@/components/Auth/AuthTabs.vue'
 const router = useRouter()
 const userStore = UserStore()
 const loading = ref(false)
-const userFormRef = ref<FormInstance>()
+const userFormRef = ref()
 const cropperVisible = ref(false)
 const cropperImg = ref('')
-const cropper = ref<any>(null)
+const cropper = ref(null)
 const authVisible = ref(false)
 
 const userForm = reactive({
@@ -28,7 +28,7 @@ const userForm = reactive({
 })
 
 // 表单验证规则
-const userRules = reactive<FormRules>({
+const userRules = reactive({
   username: [
     { required: true, message: '请输入用户名', trigger: 'blur' },
     {
@@ -51,7 +51,8 @@ const userRules = reactive<FormRules>({
 
 // 检查登录状态
 onMounted(() => {
-  if (!userStore.isLoggedIn) {
+  if (!userStore.isLoggedIn || !userStore.userInfo.userId) {
+    // 如果未登录或没有用户ID，显示登录对话框
     authVisible.value = true
   }
 })
@@ -61,10 +62,15 @@ const handleAvatarClick = () => {
   const input = document.createElement('input')
   input.type = 'file'
   input.accept = 'image/*'
-  input.onchange = (e: Event) => {
-    const target = e.target as HTMLInputElement
-    const file = target.files?.[0]
+  input.onchange = (e) => {
+    const file = e.target.files?.[0]
     if (file) {
+      // 简单的文件大小验证（5MB）
+      if (file.size > 5 * 1024 * 1024) {
+        ElMessage.error('文件大小不能超过 5MB')
+        return
+      }
+      
       const reader = new FileReader()
       reader.onload = (e) => {
         const result = e.target?.result
@@ -87,7 +93,7 @@ const reset = () => {
 }
 
 // 缩放
-const changeScale = (num: number) => {
+const changeScale = (num) => {
   if (cropper.value) {
     cropper.value.changeScale(num)
   }
@@ -110,16 +116,24 @@ const rotateRight = () => {
 // 确认裁剪
 const handleCropConfirm = async () => {
   if (!cropper.value) return
-  cropper.value.getCropData(async (base64: string) => {
+  
+  cropper.value.getCropData(async (base64) => {
     try {
+      loading.value = true
+      
+      // 将 base64 转换为 Blob
       const response = await fetch(base64)
       const blob = await response.blob()
-
-      const formData = new FormData()
-      formData.append('avatar', blob, 'avatar.png')
-
-      const res = await updateUserAvatar(formData)
-
+      
+      // 创建文件对象
+      const file = new File([blob], 'avatar.png', { type: 'image/png' })
+      
+      // 使用 MinIO 上传
+      const avatarUrl = await uploadToMinio(file, 'avatar')
+      
+      // 更新用户头像信息
+      const res = await updateUserAvatar({ avatarUrl })
+      
       if (res.code === 0) {
         // 重新获取用户信息以更新头像URL
         const userInfoResponse = await getUserInfo()
@@ -134,16 +148,18 @@ const handleCropConfirm = async () => {
       } else {
         ElMessage.error(res.message || '头像更新失败')
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error('头像更新错误:', error)
       ElMessage.error(error.message || '头像更新失败')
+    } finally {
+      loading.value = false
     }
   })
 }
 
 // 处理表单提交
 const handleSubmit = async () => {
-  if (!userFormRef.value) return
+  if (userFormRef.value) return
   await userFormRef.value.validate(async (valid) => {
     if (valid) {
       loading.value = true
@@ -156,7 +172,7 @@ const handleSubmit = async () => {
         } else {
           ElMessage.error(response.message || '更新失败')
         }
-      } catch (error: any) {
+      } catch (error) {
         ElMessage.error(error.message || '更新失败')
       } finally {
         loading.value = false
@@ -186,8 +202,8 @@ const handleDelete = async () => {
     } else {
       ElMessage.error(response.message || '注销失败')
     }
-  } catch (error: any) {
-    if (error !== 'cancel') {
+  } catch (error) {
+    if (error == 'cancel') {
       ElMessage.error(error.message || '注销失败')
     }
   } finally {
@@ -330,15 +346,15 @@ const handleDelete = async () => {
 :deep(.el-input__wrapper) {
   border-radius: 8px;
   background-color: var(--el-fill-color-blank);
-  box-shadow: 0 0 0 1px var(--el-border-color) inset !important;
+  box-shadow: 0 0 0 1px var(--el-border-color) inset important;
 }
 
 :deep(.el-input__wrapper:hover) {
-  box-shadow: 0 0 0 1px var(--el-border-color-hover) inset !important;
+  box-shadow: 0 0 0 1px var(--el-border-color-hover) inset important;
 }
 
 :deep(.el-input__wrapper.is-focus) {
-  box-shadow: 0 0 0 1px var(--el-color-primary) inset !important;
+  box-shadow: 0 0 0 1px var(--el-color-primary) inset important;
 }
 
 .submit-btn {
@@ -350,20 +366,20 @@ const handleDelete = async () => {
   border-radius: 8px;
   resize: none;
   background-color: var(--el-fill-color-blank);
-  box-shadow: 0 0 0 1px var(--el-border-color) inset !important;
+  box-shadow: 0 0 0 1px var(--el-border-color) inset important;
 }
 
 :deep(.el-textarea__inner:hover) {
-  box-shadow: 0 0 0 1px var(--el-border-color-hover) inset !important;
+  box-shadow: 0 0 0 1px var(--el-border-color-hover) inset important;
 }
 
 :deep(.el-textarea__inner:focus) {
-  box-shadow: 0 0 0 1px var(--el-color-primary) inset !important;
+  box-shadow: 0 0 0 1px var(--el-color-primary) inset important;
 }
 
 :deep(.el-input.is-disabled .el-input__wrapper) {
   background-color: var(--el-fill-color-blank);
-  box-shadow: 0 0 0 1px var(--el-border-color-light) inset !important;
+  box-shadow: 0 0 0 1px var(--el-border-color-light) inset important;
   cursor: not-allowed;
 }
 

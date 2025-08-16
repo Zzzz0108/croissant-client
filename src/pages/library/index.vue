@@ -1,6 +1,9 @@
-<script setup lang="ts">
+<script setup lang="js">
+import { ref, reactive, computed, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { getAllSongs } from '@/api/system'
 import { useLibraryStore } from '@/stores/modules/library'
+import { processImageUrls } from '@/utils/minio'
 
 const route = useRoute()
 const libraryStore = useLibraryStore()
@@ -34,26 +37,48 @@ const handleCurrentChange = () => {
     getSongs()
 }
 
-const getSongs = () => {
-    libraryStore.setTableData(null)
-    getAllSongs({
-        pageNum: currentPage.value,
-        pageSize: pageSize.value,
-        songName: route.query.query as string || '',
-        artistName: '',
-        album: '',
-    }).then((res) => {
+const getSongs = async () => {
+    try {
+        libraryStore.setTableData(null)
+        console.log('正在获取曲库数据...', {
+            pageNum: currentPage.value,
+            pageSize: pageSize.value,
+            songName: route.query.query || '',
+            artistName: '',
+            album: ''
+        })
+        
+        const res = await getAllSongs({
+            pageNum: currentPage.value,
+            pageSize: pageSize.value,
+            songName: route.query.query || '',
+            artistName: '',
+            album: '',
+        })
+        
+        console.log('曲库数据响应:', res)
+        
         if (res.code === 0 && res.data) {
-            libraryStore.setTableData(res.data)
+            // 处理图片 URL，添加 -blob 后缀
+            const processedData = {
+                ...res.data,
+                items: processImageUrls(res.data.items || [])
+            }
+            libraryStore.setTableData(processedData)
             state.total = res.data.total || 0
+            console.log('曲库数据设置成功:', processedData)
+        } else {
+            console.error('获取曲库数据失败:', res.message)
         }
-    })
+    } catch (error) {
+        console.error('获取曲库数据异常:', error)
+    }
 }
 
 watch(
     () => [route.query.query, props.selected],
     (val) => {
-        if (!val[1] || val[1] != '1') return
+        // 修复：当选择"曲库"时也要获取数据
         getSongs()
     },
     {

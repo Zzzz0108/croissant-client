@@ -1,11 +1,11 @@
-<script setup lang="ts">
+<script setup lang="js">
 import { Icon } from '@iconify/vue'
 import { formatTime } from '@/utils'
 import { UserStore } from '@/stores/modules/user'
 import { AudioStore } from '@/stores/modules/audio'
 import { collectSong, cancelCollectSong } from '@/api/system'
 import { ElMessage } from 'element-plus'
-import { computed } from 'vue'
+import { computed, inject } from 'vue'
 import { useRoute } from 'vue-router'
 import { useLibraryStore } from '@/stores/modules/library'
 import { useArtistStore } from '@/stores/modules/artist'
@@ -16,6 +16,8 @@ const audioStore = AudioStore()
 const route = useRoute()
 const libraryStore = useLibraryStore()
 
+// 直接注入 audioPlayer
+const audioPlayer = inject('audioPlayer')
 const {
   isPlaying,
   currentTime,
@@ -24,7 +26,7 @@ const {
   prevTrack,
   togglePlayPause,
   seek,
-} = useAudioPlayer()
+} = audioPlayer || {}
 
 // 获取当前播放歌曲的喜欢状态
 const currentSongLikeStatus = computed(() => {
@@ -33,7 +35,7 @@ const currentSongLikeStatus = computed(() => {
 })
 
 // 更新所有相同歌曲的喜欢状态
-const updateAllSongLikeStatus = (songId: number, status: number) => {
+const updateAllSongLikeStatus = (songId, status) => {
   // 更新播放列表中的状态
   audioStore.trackList.forEach(track => {
     if (Number(track.id) === songId) {
@@ -89,7 +91,10 @@ const handleLike = async () => {
   }
 
   const currentTrack = audioStore.trackList[audioStore.currentSongIndex]
-  if (!currentTrack) return
+  if (!currentTrack) {
+    ElMessage.warning('没有正在播放的歌曲')
+    return
+  }
 
   try {
     const songId = Number(currentTrack.id)
@@ -112,7 +117,7 @@ const handleLike = async () => {
         ElMessage.error(res.message || '取消喜欢失败')
       }
     }
-  } catch (error: any) {
+  } catch (error) {
     ElMessage.error(error.message || '操作失败')
   }
 }

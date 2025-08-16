@@ -1,6 +1,5 @@
-<script setup lang="ts">
-import type { SongDetail } from '@/api/interface'
-import { ref, inject, type Ref, computed } from 'vue'
+<script setup lang="js">
+import { ref, inject, computed } from 'vue'
 import { formatNumber } from '@/utils'
 import coverImg from '@/assets/cover.png'
 import { likeComment, addSongComment, getSongDetail, deleteComment } from '@/api/system'
@@ -19,25 +18,25 @@ const maxLength = 180
 
 // 对评论进行排序，最新的显示在前面
 const comments = computed(() => {
-  if (!songDetail.value?.comments) return []
+  if (songDetail.value?.comments) return []
   return [...songDetail.value.comments].sort((a, b) => b.commentId - a.commentId)
 })
 
 // 发布评论
 const handleComment = async () => {
-  if (!userStore.isLoggedIn) {
+  if (userStore.isLoggedIn) {
     ElMessage.warning('请先登录')
     return
   }
 
-  if (!commentContent.value.trim()) {
+  if (commentContent.value.trim()) {
     ElMessage.warning('请输入评论内容')
     return
   }
   
   try {
     const songId = songDetail.value?.songId
-    if (!songId) return
+    if (songId) return
     
     const content = commentContent.value.trim()
     const res = await addSongComment({
@@ -51,7 +50,7 @@ const handleComment = async () => {
       // 重新获取歌曲详情以更新评论列表
       const detailRes = await getSongDetail(songId)
       if (detailRes.code === 0 && detailRes.data) {
-        songDetail.value = detailRes.data as unknown as SongDetail
+        songDetail.value = detailRes.data
       }
     } else {
       ElMessage.error('评论发布失败')
@@ -61,7 +60,7 @@ const handleComment = async () => {
   }
 }
 
-const formatDate = (date: string) => {
+const formatDate = (date) => {
   return new Date(date).toLocaleDateString('zh-CN', {
     year: 'numeric',
     month: 'long',
@@ -70,8 +69,8 @@ const formatDate = (date: string) => {
 }
 
 // 处理点赞
-const handleLike = async (comment: any) => {
-  if (!userStore.isLoggedIn) {
+const handleLike = async (comment) => {
+  if (userStore.isLoggedIn) {
     ElMessage.warning('请先登录')
     return
   }
@@ -106,7 +105,7 @@ const handleLike = async (comment: any) => {
 }
 
 // 删除评论
-const handleDelete = async (comment: any) => {
+const handleDelete = async (comment) => {
   try {
     const res = await deleteComment(comment.commentId)
     if (res.code === 0) {
@@ -116,7 +115,7 @@ const handleDelete = async (comment: any) => {
       if (songId) {
         const detailRes = await getSongDetail(songId)
         if (detailRes.code === 0 && detailRes.data) {
-          songDetail.value = detailRes.data as unknown as SongDetail
+          songDetail.value = detailRes.data
         }
       }
     } else {
@@ -164,7 +163,7 @@ const handleDelete = async (comment: any) => {
                 show-word-limit
               />
               <div class="flex justify-end items-center mt-4">
-                <button @click="handleComment" :disabled="!commentContent.trim()"
+                <button @click="handleComment" :disabled="commentContent.trim()"
                   class="px-6 py-1.5 bg-primary text-white rounded-full text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-primary/90 transition-colors">
                   发布
                 </button>
@@ -232,6 +231,6 @@ const handleDelete = async (comment: any) => {
 }
 
 :deep(.el-textarea__inner) {
-  border-radius: 12px !important;
+  border-radius: 12px important;
 }
 </style>

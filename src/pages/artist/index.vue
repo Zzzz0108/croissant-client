@@ -1,7 +1,10 @@
-<script setup lang="ts">
+<script setup lang="js">
+import { ref, reactive, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { categories } from '@/utils/enum'
 import { getAllArtists } from '@/api/system'
 import { ElNotification } from 'element-plus'
+import { processImageUrls } from '@/utils/minio'
 
 const router = useRouter()
 const artistList = ref([])
@@ -26,8 +29,8 @@ const state = reactive({
 const searchKeyword = ref('')
 
 // 切换菜单显示
-const toggleMenu = (index: number) => {
-  categories.value[index].isOpen = !categories.value[index].isOpen
+const toggleMenu = (index) => {
+  categories.value[index].isOpen = categories.value[index].isOpen
 }
 
 // 处理分页大小变化
@@ -41,7 +44,7 @@ const handleCurrentChange = () => {
   handleGetArtistList()
 }
 
-const handleSubCategoryClick = (id: string, index: number) => {
+const handleSubCategoryClick = (id, index) => {
   if (index === 0) {
     selectedGender.value = id
   } else {
@@ -62,12 +65,20 @@ const handleGetArtistList = () => {
 
   getAllArtists(params).then((res) => {
     if (res.code === 0 && res.data) {
-      artistList.value = res.data.items.map(item => ({
+      console.log('获取歌手数据原始响应:', res.data)
+      
+      // 处理图片 URL，添加 -blob 后缀
+      const processedItems = processImageUrls(res.data.items || [], '230y230')
+      console.log('处理后的歌手数据:', processedItems)
+      
+      artistList.value = processedItems.map(item => ({
         artistId: item.artistId,
         name: item.artistName,
         picUrl: item.avatar,
         alias: []
       }))
+      
+      console.log('最终歌手列表:', artistList.value)
       total.value = res.data.total
       state.total = res.data.total
     } else {
@@ -91,7 +102,10 @@ const handleSearch = () => {
 
   getAllArtists(params).then((res) => {
     if (res.code === 0 && res.data) {
-      artistList.value = res.data.items.map(item => ({
+      // 处理图片 URL，添加 -blob 后缀
+      const processedItems = processImageUrls(res.data.items || [], '230y230')
+      
+      artistList.value = processedItems.map(item => ({
         artistId: item.artistId,
         name: item.artistName,
         picUrl: item.avatar,

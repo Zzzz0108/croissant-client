@@ -1,4 +1,5 @@
-<script setup lang="ts">
+<script setup lang="js">
+import { ref, onMounted, watch } from 'vue'
 import Artplayer from 'artplayer'
 
 const props = defineProps({
@@ -32,7 +33,7 @@ const option: Artplayer['Option'] = {
   hotkey: true,
 }
 
-const art = ref<Artplayer>()
+const art = ref()
 
 onMounted(() => {
   art.value = new Artplayer(option)
@@ -42,7 +43,7 @@ watch(
   () => props.src,
   (val) => {
     if (val) {
-      if (!art.value) return
+      if (art.value) return
       art.value.url = val
       art.value.poster = props.poster
     }

@@ -1,12 +1,14 @@
-<script setup lang="ts">
+<script setup lang="js">
+import { ref, computed, watch, onMounted, inject } from 'vue'
+import { useRoute } from 'vue-router'
 import { getPlaylistDetail, addPlaylistComment, likeComment, deleteComment } from '@/api/system'
 import { formatNumber } from '@/utils'
-import type { PlaylistDetail, Song } from '@/api/interface'
 import coverImg from '@/assets/cover.png'
 import { usePlaylistStore } from '@/stores/modules/playlist'
 import { useFavoriteStore } from '@/stores/modules/favorite'
 import { ElMessage } from 'element-plus'
 import { UserStore } from '@/stores/modules/user'
+import { AudioStore } from '@/stores/modules/audio'
 
 const route = useRoute()
 const audui = AudioStore()
@@ -15,7 +17,10 @@ const favoriteStore = useFavoriteStore()
 const userStore = UserStore()
 const playlist = computed(() => playlistStore.playlist)
 const songs = computed(() => playlistStore.songs)
-const { loadTrack, play } = useAudioPlayer()
+
+// 直接注入 audioPlayer
+const audioPlayer = inject('audioPlayer')
+const { loadTrack, play } = audioPlayer || {}
 
 // 添加激活的选项卡变量
 const activeTab = ref('songs')
@@ -40,20 +45,12 @@ const toggleCollect = async () => {
   }
 }
 
-interface PlaylistComment {
-  commentId: number
-  username: string
-  userAvatar: string
-  content: string
-  createTime: string
-  likeCount: number
-}
 
 // 评论相关
 const commentContent = ref('')
 const maxLength = 180
 const comments = computed(() => {
-  const rawComments = (playlistStore.playlist?.comments || []) as PlaylistComment[]
+  const rawComments = (playlistStore.playlist?.comments || [])
   return rawComments
     .map(comment => ({
       ...comment,
@@ -75,7 +72,7 @@ const handleComment = async () => {
     return
   }
 
-  if (!commentContent.value.trim()) {
+  if (commentContent.value.trim()) {
     ElMessage.warning('请输入评论内容')
     return
   }
@@ -95,9 +92,9 @@ const handleComment = async () => {
       // 重新获取歌单详情以更新评论列表
       const detailRes = await getPlaylistDetail(playlistId)
       if (detailRes.code === 0 && detailRes.data) {
-        const playlistData = detailRes.data as PlaylistDetail
+        const playlistData = detailRes.data
         playlistStore.setPlaylistInfo({
-          ...playlistStore.playlist!,
+          ...playlistStore.playlist,
           comments: playlistData.comments || []
         })
       }
@@ -110,7 +107,7 @@ const handleComment = async () => {
 }
 
 // 处理点赞
-const handleLike = async (comment: PlaylistComment) => {
+const handleLike = async () => {
   if (!userStore.isLoggedIn) {
     ElMessage.warning('请先登录')
     return
@@ -133,7 +130,7 @@ const handleLike = async (comment: PlaylistComment) => {
       
       // 更新到store
       playlistStore.setPlaylistInfo({
-        ...playlistStore.playlist!,
+        ...playlistStore.playlist,
         comments: updatedComments
       })
 
@@ -145,7 +142,7 @@ const handleLike = async (comment: PlaylistComment) => {
 }
 
 // 删除评论
-const handleDelete = async (comment: PlaylistComment) => {
+const handleDelete = async () => {
   try {
     const res = await deleteComment(comment.commentId)
     if (res.code === 0) {
@@ -154,9 +151,9 @@ const handleDelete = async (comment: PlaylistComment) => {
       const playlistId = Number(route.params.id)
       const detailRes = await getPlaylistDetail(playlistId)
       if (detailRes.code === 0 && detailRes.data) {
-        const playlistData = detailRes.data as PlaylistDetail
+        const playlistData = detailRes.data
         playlistStore.setPlaylistInfo({
-          ...playlistStore.playlist!,
+          ...playlistStore.playlist,
           comments: playlistData.comments || []
         })
       }
@@ -176,9 +173,9 @@ watch(
       playlistStore.setSongs([])
       const res = await getPlaylistDetail(Number(id))
       if (res.code === 0 && res.data && typeof res.data === 'object' && 'songs' in res.data) {
-        const playlistData = res.data as PlaylistDetail
+        const playlistData = res.data
         // 转换歌曲数据为 Song 类型
-        const convertedSongs: Song[] = playlistData.songs.map(song => ({
+                  const convertedSongs = playlistData.songs.map(song => ({
           songId: song.songId,
           songName: song.songName,
           artistName: song.artistName,
@@ -214,7 +211,7 @@ watch(
 const handlePlayAll = async () => {
   audui.setAudioStore('trackList', [])
 
-  if (!songs.value.length) return
+  if (songs.value.length) return
 
   const result = songs.value.map(song => ({
     id: song.songId.toString(),
@@ -311,7 +308,7 @@ const handlePlayAll = async () => {
                   show-word-limit
                 />
                 <div class="flex justify-end items-center mt-4 mr-1">
-                  <button @click="handleComment" :disabled="!commentContent.trim()"
+                  <button @click="handleComment" :disabled="commentContent.trim()"
                     class="px-6 py-1.5 bg-primary text-white rounded-full text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-primary/90 transition-colors">
                     发布
                   </button>
@@ -376,6 +373,6 @@ const handlePlayAll = async () => {
 }
 
 :deep(.el-textarea__inner) {
-  border-radius: 12px !important;
+  border-radius: 12px important;
 }
 </style>

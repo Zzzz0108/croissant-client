@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script setup lang="js">
 import Left from './components/left.vue'
 import Center from './components/center.vue'
 import Right from './components/right.vue'
