@@ -11,7 +11,7 @@ import { UserStore } from '@/stores/modules/user'
 import { AudioStore } from '@/stores/modules/audio'
 
 const route = useRoute()
-const audui = AudioStore()
+const audio = AudioStore()
 const playlistStore = usePlaylistStore()
 const favoriteStore = useFavoriteStore()
 const userStore = UserStore()
@@ -209,25 +209,51 @@ watch(
 )
 
 const handlePlayAll = async () => {
-  audui.setAudioStore('trackList', [])
+  try {
+    console.log('🎵 歌单页面 - 播放全部开始:', {
+      songsCount: songs.value.length,
+      songs: songs.value
+    })
 
-  if (songs.value.length) return
+    if (!songs.value || songs.value.length === 0) {
+      console.warn('🎵 歌单页面 - 没有歌曲可播放')
+      return
+    }
 
-  const result = songs.value.map(song => ({
-    id: song.songId.toString(),
-    title: song.songName,
-    artist: song.artistName,
-    album: song.album,
-    cover: song.coverUrl || coverImg,
-    url: song.audioUrl,
-    duration: parseFloat(song.duration) * 1000,
-    likeStatus: song.likeStatus
-  }))
+    // 转换歌曲数据格式
+    const result = songs.value.map(song => ({
+      id: song.songId.toString(),
+      title: song.songName,
+      artist: song.artistName,
+      album: song.album,
+      cover: song.coverUrl || coverImg,
+      url: song.audioUrl,
+      duration: parseFloat(song.duration) * 1000,
+      likeStatus: song.likeStatus
+    }))
 
-  audui.setAudioStore('trackList', result)
-  audui.setAudioStore('currentSongIndex', 0)
-  await loadTrack()
-  play()
+    console.log('🎵 歌单页面 - 转换后的歌曲数据:', result)
+
+    // 设置播放列表和当前歌曲索引
+    audio.setAudioStore('trackList', result)
+    audio.setAudioStore('currentSongIndex', 0)
+
+    console.log('🎵 歌单页面 - 播放列表设置完成:', {
+      trackList: result,
+      currentSongIndex: 0
+    })
+
+    // 加载并播放第一首歌
+    if (loadTrack && play) {
+      await loadTrack()
+      await play()
+      console.log('🎵 歌单页面 - 播放全部成功')
+    } else {
+      console.error('🎵 歌单页面 - loadTrack 或 play 函数未注入')
+    }
+  } catch (error) {
+    console.error('🎵 歌单页面 - 播放全部失败:', error)
+  }
 }
 </script>
 <template>

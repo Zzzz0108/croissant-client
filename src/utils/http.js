@@ -79,7 +79,7 @@ instance.interceptors.request.use(
     console.log('最终Token:', token)
     
     // 权限相关的调试信息
-    if (config.url.includes('/song/') || config.url.includes('/favorite/') || config.url.includes('/playlist/')) {
+    if (config.url.includes('/song/') || config.url.includes('/favorite/') || config.url.includes('/playlist/') || config.url.includes('/comment/') || config.url.includes('/artist/')) {
       console.log('🔐 权限相关请求调试:', {
         url: config.url,
         method: config.method?.toUpperCase(),
@@ -100,6 +100,21 @@ instance.interceptors.request.use(
           tokenValid: !!token,
           userAuthenticated: userStore.isAuthenticated,
           fullUserInfo: userStore.userInfo
+        })
+      }
+      
+      // 特别针对评论功能的调试
+      if (config.url.includes('/comment/addSongComment') || config.url.includes('/comment/addPlaylistComment') || 
+          config.url.includes('/comment/likeComment/') || config.url.includes('/comment/cancelLikeComment/') || 
+          config.url.includes('/comment/deleteComment/') || config.url.includes('/comment/')) {
+        console.log('💬 评论功能权限调试:', {
+          expectedRole: 'ROLE_USER',
+          actualRole: userStore.userRole,
+          roleMatch: userStore.userRole === 'ROLE_USER',
+          tokenValid: !!token,
+          userAuthenticated: userStore.isAuthenticated,
+          fullUserInfo: userStore.userInfo,
+          tokenPrefix: token?.substring(0, 20) + '...'
         })
       }
     }
@@ -163,6 +178,18 @@ instance.interceptors.response.use(
             ElMessage.error('歌单相关操作失败，请检查权限')
           } else if (url.includes('/song/collectSong')) {
             ElMessage.error('收藏歌曲失败，API路径已更新，请刷新页面重试')
+          } else if (url.includes('/comment/addSongComment')) {
+            ElMessage.error('发布歌曲评论失败，请检查登录状态和权限配置')
+          } else if (url.includes('/comment/addPlaylistComment')) {
+            ElMessage.error('发布歌单评论失败，请检查登录状态和权限配置')
+          } else if (url.includes('/comment/likeComment/')) {
+            ElMessage.error('点赞评论失败，请检查登录状态和权限配置')
+          } else if (url.includes('/comment/cancelLikeComment/')) {
+            ElMessage.error('取消点赞失败，请检查登录状态和权限配置')
+          } else if (url.includes('/comment/deleteComment/')) {
+            ElMessage.error('删除评论失败，请检查登录状态和权限配置')
+          } else if (url.includes('/comment/')) {
+            ElMessage.error('评论操作失败，请检查登录状态和权限配置')
           } else {
             ElMessage.error(`没有权限访问: ${url}`)
           }

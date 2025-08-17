@@ -157,13 +157,13 @@ const handleSendCode = async () => {
     }
     
     // 倒计时逻辑
-    timer = setInterval(() => {
-      countdown.value--
-      if (countdown.value <= 0) {
-        clearInterval(timer)
+      timer = setInterval(() => {
+        countdown.value--
+        if (countdown.value <= 0) {
+            clearInterval(timer)
         isSending.value = false
-      }
-    }, 1000)
+        }
+      }, 1000)
   } catch (error) {
     ElNotification({
       title: '发送验证码异常',
@@ -352,7 +352,7 @@ onBeforeUnmount(() => {
 
           <!-- 底部链接 -->
           <div class="footer-links">
-            <a href="#" @click.prevent="switchToLogin">返回登录</a>
+      <a href="#" @click.prevent="switchToLogin">返回登录</a>
             <a href="#" @click.prevent="switchToRegister">注册账号</a>
           </div>
 

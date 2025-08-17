@@ -5,6 +5,7 @@ import { categories } from '@/utils/enum'
 import { getAllArtists } from '@/api/system'
 import { ElNotification } from 'element-plus'
 import { processImageUrls } from '@/utils/minio'
+import { Icon } from '@iconify/vue'
 
 const router = useRouter()
 const artistList = ref([])
@@ -14,7 +15,7 @@ const selectedArea = ref('-1')
 
 // 分页相关
 const currentPage = ref(1)
-const pageSize = ref(12)
+const pageSize = ref(16) // 默认显示16个歌手
 const total = ref(0)
 
 const state = reactive({
@@ -23,7 +24,7 @@ const state = reactive({
   background: false,
   layout: 'total, sizes, prev, pager, next, jumper',
   total: 0,
-  pageSizes: [12, 24, 36, 48],
+  pageSizes: [16, 24, 36, 48], // 16作为第一个选项
 })
 
 const searchKeyword = ref('')
@@ -91,6 +92,15 @@ const handleGetArtistList = () => {
   })
 }
 
+// 重置筛选条件
+const handleReset = () => {
+  selectedGender.value = '-1'
+  selectedArea.value = '-1'
+  searchKeyword.value = ''
+  currentPage.value = 1
+  handleGetArtistList()
+}
+
 const handleSearch = () => {
   const params = {
     pageNum: currentPage.value,
@@ -123,40 +133,37 @@ const handleSearch = () => {
   })
 }
 
-const handleReset = () => {
-  searchKeyword.value = ''
-  selectedGender.value = '-1'
-  selectedArea.value = '-1'
-  currentPage.value = 1
-  handleGetArtistList()
-}
+
 
 onMounted(() => {
   handleGetArtistList()
 })
 </script>
 <template>
-  <div class="flex h-full">
-    <div class="w-64 bg-background p-4">
+  <div class="flex h-full overflow-hidden">
+    <!-- 左侧固定区域：歌手分类和搜索栏 -->
+    <div class="w-64 bg-background p-4 flex-shrink-0 border-r border-border">
       <div class="flex items-center justify-between mb-4">
         <h2 class="text-lg font-semibold">歌手分类</h2>
         <button @click="handleReset"
-          class="inline-flex items-center text-sm text-muted-foreground hover:text-foreground">
+          class="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors">
           <icon-bx:reset class="mr-1 h-4 w-4" />
           重置
         </button>
       </div>
 
-      <nav>
+      <nav class="space-y-4">
+        <!-- 搜索框 -->
         <div class="relative">
           <icon-akar-icons:search
-            class="lucide lucide-search absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
+            class="lucide lucide-search absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground z-10" />
           <input v-model="searchKeyword" @keyup.enter="handleSearch"
-            class="flex h-10 rounded-lg border border-input transform duration-300 bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-0 pl-10 w-56"
+            class="flex h-10 rounded-lg border border-input transform duration-300 bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-0 pl-10 w-full"
             placeholder="搜索歌手" />
         </div>
 
-        <div class="mb-2 mt-4">
+        <!-- 性别分类 -->
+        <div class="space-y-2">
           <button
             class="inline-flex items-center justify-between gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2 w-full"
             @click="toggleMenu(0)">
@@ -166,16 +173,18 @@ onMounted(() => {
               transition: 'transform 0.3s ease',
             }" />
           </button>
-          <div v-show="categories[0].isOpen" class="ml-4 mt-1 space-y-1">
+          <div v-show="categories[0].isOpen" class="ml-4 space-y-1">
             <button v-for="(subCategory, subIndex) in categories[0].subCategories" :key="subIndex"
               @click="handleSubCategoryClick(subCategory.id, 0)"
-              class="inline-flex items-center gap-2 whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:text-accent-foreground h-9 rounded-md px-3 w-48 justify-start"
+              class="inline-flex items-center gap-2 whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:text-accent-foreground h-9 rounded-md px-3 w-full justify-start"
               :class="selectedGender === subCategory.id ? 'bg-activeMenuBg text-accent-foreground' : 'hover:bg-hoverMenuBg text-foreground'">
               {{ subCategory.label }}
             </button>
           </div>
         </div>
-        <div class="mb-2">
+        
+        <!-- 地区分类 -->
+        <div class="space-y-2">
           <button
             class="inline-flex items-center justify-between gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2 w-full"
             @click="toggleMenu(1)">
@@ -185,10 +194,10 @@ onMounted(() => {
               transition: 'transform 0.3s ease',
             }" />
           </button>
-          <div v-show="categories[1].isOpen" class="ml-4 mt-1 space-y-1">
+          <div v-show="categories[1].isOpen" class="ml-4 space-y-1">
             <button v-for="(subCategory, subIndex) in categories[1].subCategories" :key="subIndex"
               @click="handleSubCategoryClick(subCategory.id, 1)"
-              class="inline-flex items-center gap-2 whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:text-accent-foreground h-9 rounded-md px-3 w-48 justify-start"
+              class="inline-flex items-center gap-2 whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:text-accent-foreground h-9 rounded-md px-3 w-full justify-start"
               :class="selectedArea === subCategory.id ? 'bg-activeMenuBg text-accent-foreground' : 'hover:bg-hoverMenuBg text-foreground'">
               {{ subCategory.label }}
             </button>
@@ -196,12 +205,16 @@ onMounted(() => {
         </div>
       </nav>
     </div>
-    <main class="flex-1">
-      <div class="p-2 md:p-4 lg:p-6">
-        <div class="w-[86%] mx-auto">
-          <div class="grid grid-cols-4 gap-x-16 gap-y-8">
+    
+    <!-- 右侧可滚动区域：歌手列表 -->
+    <main class="flex-1 overflow-hidden flex flex-col">
+      <!-- 歌手列表容器 -->
+      <div class="flex-1 overflow-y-auto p-6">
+        <div class="max-w-6xl mx-auto">
+          <!-- 歌手网格 -->
+          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-4 gap-6">
             <div v-for="(artist, index) in artistList" :key="index"
-              class="group relative rounded-full text-card-foreground shadow-md hover:shadow-xl">
+              class="group relative rounded-full text-card-foreground shadow-md hover:shadow-xl transition-all duration-300">
               <button @click="router.push(`/artist/${artist.artistId}`)" class="w-full h-full overflow-hidden rounded-full">
                 <div class="w-full h-full relative">
                   <el-image lazy :alt="artist.name"
@@ -221,13 +234,87 @@ onMounted(() => {
               </button>
             </div>
           </div>
+          
+          <!-- 空状态 -->
+          <div v-if="artistList.length === 0" class="text-center py-16">
+            <div class="text-gray-500 dark:text-gray-400">
+              <icon-mdi:account-music class="text-6xl mx-auto mb-4 opacity-50" />
+              <p class="text-lg">暂无歌手数据</p>
+              <p class="text-sm mt-2">请尝试调整筛选条件或搜索关键词</p>
+            </div>
+          </div>
         </div>
       </div>
-      <!-- 分页 -->
-      <nav class="mx-auto flex w-full justify-center mt-6">
-        <el-pagination v-model:page-size="pageSize" v-model:currentPage="currentPage" v-bind="state"
-          @size-change="handleSizeChange" @current-change="handleCurrentChange" />
-      </nav>
+      
+      <!-- 分页器 -->
+      <div class="border-t border-border bg-background p-4">
+        <nav class="flex justify-center">
+          <el-pagination 
+            v-model:page-size="pageSize" 
+            v-model:currentPage="currentPage" 
+            v-bind="state"
+            @size-change="handleSizeChange" 
+            @current-change="handleCurrentChange" 
+            class="flex-shrink-0"
+          />
+        </nav>
+      </div>
     </main>
   </div>
 </template>
+
+<style scoped>
+/* 自定义滚动条样式 */
+.overflow-y-auto::-webkit-scrollbar {
+  width: 6px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.overflow-y-auto::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 3px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+/* 暗黑模式滚动条 */
+.dark .overflow-y-auto::-webkit-scrollbar-thumb {
+  background: #4b5563;
+}
+
+.dark .overflow-y-auto::-webkit-scrollbar-thumb:hover {
+  background: #6b7280;
+}
+
+/* 歌手头像悬停效果 */
+.group:hover .group-hover\:scale-110 {
+  transform: scale(1.1);
+}
+
+/* 响应式网格优化 */
+@media (max-width: 640px) {
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+}
+
+@media (min-width: 641px) and (max-width: 768px) {
+  .grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+  }
+}
+
+@media (min-width: 769px) {
+  .grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 2rem;
+  }
+}
+</style>

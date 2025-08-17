@@ -2,11 +2,11 @@
 import { ref, inject, computed } from 'vue'
 import { formatNumber } from '@/utils'
 import coverImg from '@/assets/cover.png'
-import { likeComment, addSongComment, getSongDetail, deleteComment } from '@/api/system'
-import { ElMessage } from 'element-plus'
+import { likeComment, cancelLikeComment, addSongComment, getSongDetail, deleteComment } from '@/api/system'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { UserStore } from '@/stores/modules/user'
 
-const songDetail = inject<Ref<SongDetail | null>>('songDetail')
+const songDetail = inject('songDetail')
 const userStore = UserStore()
 
 // 获取当前用户名
@@ -18,42 +18,60 @@ const maxLength = 180
 
 // 对评论进行排序，最新的显示在前面
 const comments = computed(() => {
-  if (songDetail.value?.comments) return []
+  if (!songDetail.value?.comments) return []
   return [...songDetail.value.comments].sort((a, b) => b.commentId - a.commentId)
 })
 
 // 发布评论
 const handleComment = async () => {
-  if (userStore.isLoggedIn) {
+  console.log('🎵 DrawerMusic 发布评论开始:', {
+    isLoggedIn: userStore.isLoggedIn,
+    userInfo: userStore.userInfo,
+    token: userStore.userInfo?.token,
+    commentContent: commentContent.value,
+    songDetail: songDetail.value,
+    songId: songDetail.value?.songId
+  })
+  
+  if (!userStore.isLoggedIn) {
     ElMessage.warning('请先登录')
     return
   }
 
-  if (commentContent.value.trim()) {
+  if (!commentContent.value.trim()) {
     ElMessage.warning('请输入评论内容')
     return
   }
   
   try {
     const songId = songDetail.value?.songId
-    if (songId) return
+    if (!songId) {
+      ElMessage.error('歌曲ID不存在')
+      return
+    }
     
     const content = commentContent.value.trim()
-    const res = await addSongComment({
-      songId,
-      content
-    })
+    console.log('🎵 DrawerMusic 调用评论API:', { songId, content })
     
-    if (res.code === 0) {
-      ElMessage.success('评论发布成功')
-      commentContent.value = ''
-      // 重新获取歌曲详情以更新评论列表
-      const detailRes = await getSongDetail(songId)
-      if (detailRes.code === 0 && detailRes.data) {
-        songDetail.value = detailRes.data
+    // 尝试调用评论API
+    try {
+      const res = await addSongComment(songId, content)
+      console.log('🎵 DrawerMusic 评论API调用成功:', res)
+      
+      if (res.code === 0) {
+        ElMessage.success('评论发布成功')
+        commentContent.value = ''
+        // 重新获取歌曲详情以更新评论列表
+        const detailRes = await getSongDetail(songId)
+        if (detailRes.code === 0 && detailRes.data) {
+          songDetail.value = detailRes.data
+        }
+      } else {
+        ElMessage.error('评论发布失败')
       }
-    } else {
-      ElMessage.error('评论发布失败')
+    } catch (error) {
+      console.error('🎵 DrawerMusic 评论API调用失败:', error)
+      ElMessage.error('评论发布失败，请稍后重试')
     }
   } catch (error) {
     ElMessage.error('评论发布失败')
@@ -70,22 +88,37 @@ const formatDate = (date) => {
 
 // 处理点赞
 const handleLike = async (comment) => {
-  if (userStore.isLoggedIn) {
+  if (!userStore.isLoggedIn) {
     ElMessage.warning('请先登录')
     return
   }
 
   try {
-    // 调用点赞接口
-    const res = await likeComment(comment.commentId)
+    console.log('🎵 DrawerMusic 处理点赞:', { comment })
+    
+    // 检查是否已经点赞
+    const isLiked = comment.isLiked || false
+    
+    let res
+    if (isLiked) {
+      // 如果已经点赞，则取消点赞
+      console.log('🎵 DrawerMusic 取消点赞评论:', comment.commentId)
+      res = await cancelLikeComment(comment.commentId)
+    } else {
+      // 如果未点赞，则点赞
+      console.log('🎵 DrawerMusic 点赞评论:', comment.commentId)
+      res = await likeComment(comment.commentId)
+    }
+    
     if (res.code === 0) {
-      // 更新评论的点赞数量
+      // 更新评论的点赞状态和数量
       if (songDetail.value && songDetail.value.comments) {
         const updatedComments = songDetail.value.comments.map(item => {
           if (item.commentId === comment.commentId) {
             return {
               ...item,
-              likeCount: item.likeCount + 1
+              isLiked: !isLiked,
+              likeCount: isLiked ? item.likeCount - 1 : item.likeCount + 1
             }
           }
           return item
@@ -97,32 +130,51 @@ const handleLike = async (comment) => {
         }
       }
 
-      ElMessage.success('点赞成功')
+      ElMessage.success(isLiked ? '取消点赞成功' : '点赞成功')
     }
   } catch (error) {
-    ElMessage.error('点赞失败')
+    console.error('🎵 DrawerMusic 点赞操作失败:', error)
+    ElMessage.error('点赞操作失败')
   }
 }
 
 // 删除评论
 const handleDelete = async (comment) => {
   try {
-    const res = await deleteComment(comment.commentId)
-    if (res.code === 0) {
-      ElMessage.success('删除成功')
-      // 重新获取歌曲详情以更新评论列表
-      const songId = songDetail.value?.songId
-      if (songId) {
-        const detailRes = await getSongDetail(songId)
-        if (detailRes.code === 0 && detailRes.data) {
-          songDetail.value = detailRes.data
-        }
+    console.log('🎵 DrawerMusic 删除评论:', { comment })
+    
+    // 确认删除
+    const confirmed = await ElMessageBox.confirm(
+      '确定要删除这条评论吗？删除后无法恢复。',
+      '确认删除',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning',
       }
-    } else {
-      ElMessage.error('删除失败')
+    )
+    
+    if (confirmed) {
+      const res = await deleteComment(comment.commentId)
+      if (res.code === 0) {
+        ElMessage.success('删除成功')
+        // 重新获取歌曲详情以更新评论列表
+        const songId = songDetail.value?.songId
+        if (songId) {
+          const detailRes = await getSongDetail(songId)
+          if (detailRes.code === 0 && detailRes.data) {
+            songDetail.value = detailRes.data
+          }
+        }
+      } else {
+        ElMessage.error('删除失败')
+      }
     }
   } catch (error) {
-    ElMessage.error('删除失败')
+    if (error !== 'cancel') {
+      console.error('🎵 DrawerMusic 删除评论失败:', error)
+      ElMessage.error('删除失败')
+    }
   }
 }
 </script>
@@ -163,7 +215,7 @@ const handleDelete = async (comment) => {
                 show-word-limit
               />
               <div class="flex justify-end items-center mt-4">
-                <button @click="handleComment" :disabled="commentContent.trim()"
+                <button @click="handleComment" :disabled="!commentContent.trim()"
                   class="px-6 py-1.5 bg-primary text-white rounded-full text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-primary/90 transition-colors">
                   发布
                 </button>

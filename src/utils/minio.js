@@ -1,12 +1,88 @@
 import { ElMessage } from 'element-plus'
+import { updateUserAvatar, getUserInfo } from '@/api/system'
 
 /**
- * MinIO 工具函数 - 简化版本
- * 只包含核心的文件上传和 URL 处理功能
+ * MinIO 工具函数 - 修复版本
+ * 使用正确的后端头像上传接口
  */
 
 /**
- * 获取 MinIO 文件的 pre-signed URL
+ * 上传头像文件
+ * @param {File} file - 要上传的头像文件
+ * @returns {Promise<string>} 上传后的头像访问 URL
+ */
+export const uploadAvatar = async (file) => {
+  try {
+    if (!file) {
+      throw new Error('文件不能为空')
+    }
+
+    console.log('🎵 开始上传头像:', {
+      fileName: file.name,
+      fileSize: file.size,
+      fileType: file.type
+    })
+
+    // 创建 FormData
+    const formData = new FormData()
+    formData.append('avatar', file)
+
+    // 调用后端头像上传接口
+    const response = await updateUserAvatar(formData)
+    
+    console.log('🎵 后端头像上传响应:', response)
+    
+    // 检查响应状态
+    if (response && response.code === 0) {
+      // 上传成功，但后端返回的 data 为 null
+      console.log('🎵 头像上传成功，但后端未返回URL，尝试获取用户信息')
+      
+      try {
+        // 主动获取用户信息来获取新的头像URL
+        const userInfoResponse = await getUserInfo()
+        
+        if (userInfoResponse.code === 0 && userInfoResponse.data) {
+          const newAvatarUrl = userInfoResponse.data.avatarUrl || userInfoResponse.data.userAvatar || userInfoResponse.data.avatar || ''
+          
+          if (newAvatarUrl) {
+            console.log('🎵 通过获取用户信息获取到新头像URL:', newAvatarUrl)
+            return newAvatarUrl
+          } else {
+            console.warn('🎵 用户信息中也没有头像URL，响应数据:', userInfoResponse.data)
+            throw new Error('头像上传成功但无法获取新的头像URL')
+          }
+        } else {
+          console.error('🎵 获取用户信息失败:', userInfoResponse)
+          throw new Error('头像上传成功但获取用户信息失败')
+        }
+      } catch (userInfoError) {
+        console.error('🎵 获取用户信息异常:', userInfoError)
+        throw new Error('头像上传成功但无法获取用户信息')
+      }
+    } else {
+      // 上传失败
+      const errorMessage = response?.message || response?.msg || '头像上传失败'
+      console.error('🎵 头像上传失败:', errorMessage)
+      throw new Error(errorMessage)
+    }
+  } catch (error) {
+    console.error('🎵 头像上传异常:', error)
+    
+    // 如果是我们抛出的错误，直接抛出
+    if (error.message && !error.message.includes('头像上传成功')) {
+      ElMessage.error(`头像上传失败: ${error.message}`)
+      throw error
+    }
+    
+    // 如果是其他错误，包装后抛出
+    const errorMessage = error.message || '头像上传失败'
+    ElMessage.error(`头像上传失败: ${errorMessage}`)
+    throw new Error(errorMessage)
+  }
+}
+
+/**
+ * 获取 MinIO 文件的 pre-signed URL（保留兼容性，但实际不使用）
  * @param {string} filename - 文件名
  * @param {string} bucket - 存储桶名称（可选）
  * @returns {Promise<string>} pre-signed URL
@@ -45,7 +121,7 @@ export const getPresignedUrl = async (filename, bucket = null) => {
 }
 
 /**
- * 上传文件到 MinIO
+ * 上传文件到 MinIO（保留兼容性，但实际不使用）
  * @param {File} file - 要上传的文件
  * @param {string} bucket - 存储桶名称（可选）
  * @returns {Promise<string>} 上传后的文件访问 URL
@@ -127,20 +203,12 @@ export const processImageUrls = (items, defaultParam = '350y350') => {
   console.log('批量处理图片URLs:', { itemsCount: items.length, defaultParam })
   
   return items.map((item, index) => {
-    console.log(`处理第 ${index + 1} 项:`, item)
-    
-    // 处理 coverUrl 字段（歌曲封面）
     if (item.coverUrl) {
-      console.log(`处理 coverUrl: ${item.coverUrl}`)
       item.coverUrl = processImageUrl(item.coverUrl, defaultParam)
     }
-    // 处理 avatar 字段（歌手头像）
     if (item.avatar) {
-      console.log(`处理 avatar: ${item.avatar}`)
       item.avatar = processImageUrl(item.avatar, defaultParam)
     }
-    
-    console.log(`处理后的第 ${index + 1} 项:`, item)
     return item
   })
 }
@@ -153,11 +221,13 @@ export const processImageUrls = (items, defaultParam = '350y350') => {
 export const processAudioUrls = (items) => {
   if (!Array.isArray(items)) return items
   
-  return items.map(item => {
+  console.log('批量处理音频URLs:', { itemsCount: items.length })
+  
+  return items.map((item, index) => {
     if (item.audioUrl) {
-      // 音频 URL 暂时保持原样，因为可能需要后端处理
+      // 音频文件通常不需要添加 -blob 后缀，直接返回
       item.audioUrl = item.audioUrl
     }
     return item
   })
-} 
+}

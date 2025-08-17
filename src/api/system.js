@@ -92,6 +92,14 @@ export const getRecommendedSongs = () => {
 
 /** 获取所有歌曲 */
 export const getAllSongs = (data) => {
+  console.log('🎵 API 获取所有歌曲:', {
+    apiPath: '/song/getAllSongs',
+    method: 'POST',
+    requestData: data,
+    hasQuery: !!data.songName,
+    queryValue: data.songName
+  })
+  
   return http('post', '/song/getAllSongs', { data })
 }
 
@@ -114,7 +122,10 @@ export const getPlaylistComments = (id, page = 1, pageSize = 10) => {
 
 /** 添加歌单评论 */
 export const addPlaylistComment = (playlistId, content) => {
-  return http('post', '/playlist/addComment', {
+  console.log('🎵 API 添加歌单评论:', { playlistId, content })
+  
+  // 根据后端逻辑，使用正确的API路径
+  return http('post', '/comment/addPlaylistComment', {
     data: { playlistId, content }
   })
 }
@@ -128,7 +139,10 @@ export const getSongComments = (id, page = 1, pageSize = 10) => {
 
 /** 添加歌曲评论 */
 export const addSongComment = (songId, content) => {
-  return http('post', '/song/addComment', {
+  console.log('🎵 API 添加歌曲评论:', { songId, content })
+  
+  // 根据后端逻辑，使用正确的API路径
+  return http('post', '/comment/addSongComment', {
     data: { songId, content }
   })
 }
@@ -193,6 +207,15 @@ export const getArtistSongs = (id, page = 1, pageSize = 10) => {
 
 /** 搜索歌曲 */
 export const searchSongs = (keyword, page = 1, pageSize = 10) => {
+  console.log('🎵 API 搜索歌曲:', {
+    apiPath: '/song/searchSongs',
+    method: 'GET',
+    keyword: keyword,
+    page: page,
+    pageSize: pageSize,
+    params: { keyword, page, pageSize }
+  })
+  
   return http('get', '/song/searchSongs', {
     params: { keyword, page, pageSize }
   })
@@ -219,12 +242,26 @@ export const addFeedback = (data) => {
 
 /** 点赞评论 */
 export const likeComment = (commentId) => {
-  return http('post', '/comment/like', { data: { commentId } })
+  console.log('🎵 API 点赞评论:', { commentId })
+  
+  // 根据后端逻辑，使用正确的API路径
+  return http('patch', `/comment/likeComment/${commentId}`)
+}
+
+/** 取消点赞评论 */
+export const cancelLikeComment = (commentId) => {
+  console.log('🎵 API 取消点赞评论:', { commentId })
+  
+  // 根据后端逻辑，使用正确的API路径
+  return http('patch', `/comment/cancelLikeComment/${commentId}`)
 }
 
 /** 删除评论 */
 export const deleteComment = (commentId) => {
-  return http('delete', `/comment/delete/${commentId}`)
+  console.log('🎵 API 删除评论:', { commentId })
+  
+  // 根据后端逻辑，使用正确的API路径
+  return http('delete', `/comment/deleteComment/${commentId}`)
 }
 
 /** 获取歌曲URL */

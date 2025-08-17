@@ -1,5 +1,5 @@
 <script setup lang="js">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { UserStore } from '@/stores/modules/user'
 import AuthTabs from '@/components/Auth/AuthTabs.vue'
 import FeedbackDialog from '@/components/Common/FeedbackDialog.vue'
@@ -12,6 +12,11 @@ const showLogin = ref(false)
 const user = UserStore()
 const router = useRouter()
 const feedbackDialogRef = ref(null)
+
+// 确保头像URL的响应性
+const avatarUrl = computed(() => user.userInfo.avatarUrl || defaultAvatar)
+const username = computed(() => user.userInfo.username || '')
+const isAuthenticated = computed(() => user.isAuthenticated)
 
 const handleLogout = async () => {
   try {
@@ -36,10 +41,10 @@ const openFeedbackDialog = () => {
 </script>
 
 <template>
-  <el-dropdown v-if="user.isAuthenticated" class="cursor-pointer">
+  <el-dropdown v-if="isAuthenticated" class="cursor-pointer">
     <span class="flex items-center">
-      <el-avatar :src="user.userInfo.avatarUrl || defaultAvatar" class="mr-1" shape="circle" :size="32" />
-      <span class="text-sm font-medium mr-2 ml-1">{{ user.userInfo.username }}</span>
+      <el-avatar :src="avatarUrl" class="mr-1" shape="circle" :size="32" />
+      <span class="text-sm font-medium mr-2 ml-1">{{ username }}</span>
       <icon-uiw:down />
     </span>
 

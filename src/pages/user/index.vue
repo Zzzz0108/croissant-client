@@ -1,10 +1,10 @@
 <script setup lang="js">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, nextTick, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { UserStore } from '@/stores/modules/user'
 import defaultAvatar from '@/assets/user.jpg'
 import { updateUserInfo, updateUserAvatar, deleteUser, getUserInfo } from '@/api/system'
-import { uploadToMinio } from '@/utils/minio'
+import { uploadAvatar } from '@/utils/minio'
 import 'vue-cropper/dist/index.css'
 import { VueCropper } from "vue-cropper";
 import { useRouter } from 'vue-router'
@@ -18,6 +18,9 @@ const cropperVisible = ref(false)
 const cropperImg = ref('')
 const cropper = ref(null)
 const authVisible = ref(false)
+
+// 环境变量
+const isDevelopment = computed(() => import.meta.env.MODE === 'development')
 
 const userForm = reactive({
   userId: userStore.userInfo.userId,
@@ -49,11 +52,26 @@ const userRules = reactive({
   ],
 })
 
-// 检查登录状态
+// 检查登录状态和初始化表单数据
 onMounted(() => {
+  console.log('🎵 用户页面挂载，当前用户状态:', {
+    isLoggedIn: userStore.isLoggedIn,
+    userId: userStore.userInfo.userId,
+    userInfo: userStore.userInfo
+  })
+  
   if (!userStore.isLoggedIn || !userStore.userInfo.userId) {
     // 如果未登录或没有用户ID，显示登录对话框
     authVisible.value = true
+  } else {
+    // 确保表单数据与当前用户信息同步
+    userForm.userId = userStore.userInfo.userId
+    userForm.username = userStore.userInfo.username || ''
+    userForm.phone = userStore.userInfo.phone || ''
+    userForm.email = userStore.userInfo.email || ''
+    userForm.introduction = userStore.userInfo.introduction || ''
+    
+    console.log('🎵 表单数据初始化完成:', userForm)
   }
 })
 
@@ -121,6 +139,8 @@ const handleCropConfirm = async () => {
     try {
       loading.value = true
       
+      console.log('🎵 开始处理头像裁剪确认')
+      
       // 将 base64 转换为 Blob
       const response = await fetch(base64)
       const blob = await response.blob()
@@ -128,29 +148,69 @@ const handleCropConfirm = async () => {
       // 创建文件对象
       const file = new File([blob], 'avatar.png', { type: 'image/png' })
       
-      // 使用 MinIO 上传
-      const avatarUrl = await uploadToMinio(file, 'avatar')
+      console.log('🎵 创建的文件对象:', {
+        name: file.name,
+        size: file.size,
+        type: file.type
+      })
       
-      // 更新用户头像信息
-      const res = await updateUserAvatar({ avatarUrl })
+      // 使用新的头像上传函数
+      const avatarUrl = await uploadAvatar(file)
       
-      if (res.code === 0) {
-        // 重新获取用户信息以更新头像URL
-        const userInfoResponse = await getUserInfo()
-        if (userInfoResponse.code === 0) {
-          userStore.setUserInfo(userInfoResponse.data, userStore.userInfo.token)
-          ElMessage.success('头像更新成功')
-          cropperVisible.value = false
-          cropperImg.value = ''
-        } else {
-          ElMessage.error(userInfoResponse.message || '获取用户信息失败')
-        }
+      console.log('🎵 头像上传完成，新URL:', avatarUrl)
+      
+      // 头像已经通过 uploadAvatar 上传，不需要再次调用 updateUserAvatar
+      if (avatarUrl) {
+        console.log('🎵 开始更新头像:', {
+          oldAvatar: userStore.userInfo.avatarUrl,
+          newAvatar: avatarUrl
+        })
+        
+        // 直接更新头像URL
+        userStore.updateUserAvatar(avatarUrl)
+        
+        // 等待下一个 tick 确保状态更新
+        await nextTick()
+        
+        // 再次验证更新是否成功
+        console.log('🎵 更新后的用户信息:', {
+          storeAvatarUrl: userStore.userInfo.avatarUrl,
+          expectedAvatarUrl: avatarUrl,
+          isMatch: userStore.userInfo.avatarUrl === avatarUrl
+        })
+        
+        // 强制触发头像重新渲染（包括头部头像）
+        const avatarElements = document.querySelectorAll('.el-avatar img')
+        avatarElements.forEach(avatarElement => {
+          if (avatarElement) {
+            // 清除缓存并重新设置 src
+            avatarElement.src = ''
+            setTimeout(() => {
+              avatarElement.src = avatarUrl
+              console.log('🎵 强制刷新头像显示:', avatarUrl)
+            }, 100)
+          }
+        })
+        
+        ElMessage.success('头像更新成功')
+        cropperVisible.value = false
+        cropperImg.value = ''
+        
+        console.log('🎵 头像更新流程完成')
       } else {
-        ElMessage.error(res.message || '头像更新失败')
+        console.error('🎵 头像上传失败，未获取到URL')
+        ElMessage.error('头像上传失败，未获取到URL')
       }
     } catch (error) {
-      console.error('头像更新错误:', error)
-      ElMessage.error(error.message || '头像更新失败')
+      console.error('🎵 头像更新错误:', error)
+      
+      // 根据错误类型显示不同的错误信息
+      if (error.message && error.message.includes('头像上传成功')) {
+        // 这是一个特殊情况，可能是后端返回了成功但数据结构不对
+        ElMessage.warning('头像上传状态异常，请刷新页面查看')
+      } else {
+        ElMessage.error(error.message || '头像更新失败')
+      }
     } finally {
       loading.value = false
     }
@@ -159,26 +219,58 @@ const handleCropConfirm = async () => {
 
 // 处理表单提交
 const handleSubmit = async () => {
-  if (userFormRef.value) return
-  await userFormRef.value.validate(async (valid) => {
+  console.log('🎵 开始处理表单提交')
+  console.log('🎵 表单引用状态:', {
+    userFormRef: userFormRef.value,
+    userForm: userForm
+  })
+  
+  if (!userFormRef.value) {
+    console.error('🎵 表单引用不存在，无法提交')
+    ElMessage.error('表单引用错误，请刷新页面重试')
+    return
+  }
+  
+  try {
+    const valid = await userFormRef.value.validate()
+    console.log('🎵 表单验证结果:', valid)
+    
     if (valid) {
       loading.value = true
+      console.log('🎵 开始提交用户信息:', userForm)
+      
       try {
         const response = await updateUserInfo(userForm)
+        console.log('🎵 更新用户信息响应:', response)
+        
         if (response.code === 0) {
+          console.log('🎵 用户信息更新成功，开始获取最新用户信息')
           const userInfoResponse = await getUserInfo()
-          userStore.setUserInfo(userInfoResponse.data, userStore.userInfo.token)
-          ElMessage.success('更新成功')
+          console.log('🎵 获取最新用户信息响应:', userInfoResponse)
+          
+          if (userInfoResponse.code === 0) {
+            userStore.setUserInfo(userInfoResponse.data, userStore.userInfo.token)
+            ElMessage.success('更新成功')
+            console.log('🎵 用户信息更新完成')
+          } else {
+            ElMessage.error(userInfoResponse.message || '获取用户信息失败')
+          }
         } else {
           ElMessage.error(response.message || '更新失败')
         }
       } catch (error) {
+        console.error('🎵 更新用户信息异常:', error)
         ElMessage.error(error.message || '更新失败')
       } finally {
         loading.value = false
       }
+    } else {
+      console.log('🎵 表单验证失败')
     }
-  })
+  } catch (error) {
+    console.error('🎵 表单验证异常:', error)
+    ElMessage.error('表单验证失败')
+  }
 }
 
 // 处理账号注销
@@ -226,6 +318,8 @@ const handleDelete = async () => {
             <span>更新头像</span>
           </div>
         </div>
+        
+
       </div>
     </div>
 
@@ -241,23 +335,23 @@ const handleDelete = async () => {
         <div class="dialog-footer">
           <div class="flex justify-between items-center w-full">
             <div class="flex">
-              <el-button size="mini" type="info" @click="reset" class="mr-1">重置</el-button>
-              <el-button size="mini" plain @click="changeScale(1)" class="mr-1">
+              <el-button size="small" type="info" @click="reset" class="mr-1">重置</el-button>
+              <el-button size="small" plain @click="changeScale(1)" class="mr-1">
                 <icon-ph:magnifying-glass-plus-light class="mr-0.5" />放大
               </el-button>
-              <el-button size="mini" plain @click="changeScale(-1)" class="mr-1">
+              <el-button size="small" plain @click="changeScale(-1)" class="mr-1">
                 <icon-ph:magnifying-glass-minus-light class="mr-0.5" />缩小
               </el-button>
-              <el-button size="mini" plain @click="rotateLeft" class="mr-1">
+              <el-button size="small" plain @click="rotateLeft" class="mr-1">
                 <icon-grommet-icons:rotate-left class="mr-0.5" />左旋转
               </el-button>
-              <el-button size="mini" plain @click="rotateRight" class="mr-1">
+              <el-button size="small" plain @click="rotateRight" class="mr-1">
                 <icon-grommet-icons:rotate-right class="mr-0.5" />右旋转
               </el-button>
             </div>
             <div class="flex">
-              <el-button size="mini" type="warning" plain @click="cropperVisible = false" class="mr-1">取消</el-button>
-              <el-button size="mini" type="primary" @click="handleCropConfirm">确认</el-button>
+              <el-button size="small" type="warning" plain @click="cropperVisible = false" class="mr-1">取消</el-button>
+              <el-button size="small" type="primary" @click="handleCropConfirm">确认</el-button>
             </div>
           </div>
         </div>

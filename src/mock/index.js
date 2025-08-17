@@ -6,4 +6,6 @@ export const defaultSong = {
     title: '未选择歌曲',
     artist: '未知歌手',
     cover: new URL(`@/assets/default_album.jpg`, import.meta.url).href,
+    trackId: 'default',
+    hasCover: true
 } 

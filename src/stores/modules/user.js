@@ -108,7 +108,7 @@ export const UserStore = defineStore('UserStore', {
         username: userInfo.username,
         phone: userInfo.phone,
         email: userInfo.email,
-        avatarUrl: userInfo.userAvatar,
+        avatarUrl: userInfo.avatarUrl || userInfo.userAvatar, // 支持两种字段名
         introduction: userInfo.introduction,
         role: roleFromJWT || userInfo.role, // 优先使用JWT中的角色信息
         token: token // 直接使用传入的token
@@ -123,8 +123,20 @@ export const UserStore = defineStore('UserStore', {
     },
     // 更新头像
     updateUserAvatar(avatarUrl) {
+      console.log('🎵 开始更新头像:', {
+        oldAvatarUrl: this.userInfo?.avatarUrl,
+        newAvatarUrl: avatarUrl,
+        userInfoExists: !!this.userInfo
+      })
+      
       if (this.userInfo) {
         this.userInfo.avatarUrl = avatarUrl
+        console.log('🎵 头像更新完成:', {
+          newAvatarUrl: this.userInfo.avatarUrl,
+          fullUserInfo: this.userInfo
+        })
+      } else {
+        console.error('🎵 无法更新头像：userInfo 不存在')
       }
     },
     // 清除用户信息

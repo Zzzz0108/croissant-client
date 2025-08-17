@@ -1,5 +1,6 @@
 <script setup lang="js">
 import { formatTime } from '@/utils'
+import { processImageUrl } from '@/utils/minio'
 import { Icon } from '@iconify/vue'
 import { ref, inject, computed } from 'vue'
 import vinylImg from '@/assets/vinyl.png'
@@ -19,7 +20,7 @@ const {
   setPlayMode,
 } = audioPlayer || {}
 
-const songDetail = inject<Ref<SongDetail | null>>('songDetail')
+const songDetail = inject('songDetail')
 
 // 添加播放模式相关逻辑
 const playModes = {
@@ -52,6 +53,69 @@ const togglePlayMode = () => {
   currentMode.value = nextMode
   setPlayMode(nextMode)
 }
+
+// 封面URL计算属性
+const coverUrl = computed(() => {
+  try {
+    // 优先使用 songDetail 的封面
+    if (songDetail?.value?.coverUrl) {
+      const rawUrl = songDetail.value.coverUrl
+      console.log('🎵 DrawerMusic 计算属性 - 原始 songDetail 封面:', rawUrl)
+      
+      // 使用 processImageUrl 处理封面URL，移除 -blob 后缀并添加尺寸参数
+      const processedUrl = processImageUrl(rawUrl, '350y350')
+      console.log('🎵 DrawerMusic 计算属性 - 处理后的 songDetail 封面:', processedUrl)
+      
+      return processedUrl
+    }
+    
+    // 其次使用 currentTrack 的封面
+    if (currentTrack?.cover) {
+      const rawUrl = currentTrack.cover
+      console.log('🎵 DrawerMusic 计算属性 - 原始 currentTrack 封面:', rawUrl)
+      
+      // 使用 processImageUrl 处理封面URL
+      const processedUrl = processImageUrl(rawUrl, '350y350')
+      console.log('🎵 DrawerMusic 计算属性 - 处理后的 currentTrack 封面:', processedUrl)
+      
+      return processedUrl
+    }
+    
+    // 最后使用默认封面
+    console.log('🎵 DrawerMusic 计算属性 - 使用默认封面')
+    return '/src/assets/default_album.jpg'
+  } catch (error) {
+    console.error('🎵 DrawerMusic 计算属性 - 获取封面URL错误:', error)
+    return '/src/assets/default_album.jpg'
+  }
+})
+
+// 这些函数不再需要，因为我们现在使用 processImageUrl 处理URL
+
+// 获取封面URL（保持向后兼容）
+const getCoverUrl = () => coverUrl.value
+
+// 处理封面加载错误
+const handleCoverError = (event) => {
+  console.error('🎵 DrawerMusic 封面加载失败:', {
+    target: event.target,
+    style: event.target.style.backgroundImage,
+    songDetail: songDetail.value,
+    currentTrack: currentTrack
+  })
+  
+  // 设置默认封面
+  event.target.style.backgroundImage = 'url(/src/assets/default_album.jpg)'
+}
+
+// 处理封面加载成功
+const handleCoverLoad = (event) => {
+  console.log('🎵 DrawerMusic 封面加载成功:', {
+    target: event.target,
+    style: event.target.style.backgroundImage,
+    computedStyle: window.getComputedStyle(event.target).backgroundImage
+  })
+}
 </script>
 
 <template>
@@ -61,11 +125,11 @@ const togglePlayMode = () => {
       <div :class="` ${isPlaying ? 'is-playing' : ''}`">
         <div class="album">
           <div class="album-art rounded-md" :style="{
-            backgroundImage: `url(${songDetail?.coverUrl || currentTrack.cover})`
-          }"></div>
+            backgroundImage: `url(${getCoverUrl()})`
+          }" @error="handleCoverError" @load="handleCoverLoad"></div>
           <div class="vinyl" :style="{
             animationPlayState: isPlaying ? 'running' : 'paused',
-            backgroundImage: `url(${vinylImg}), url(${songDetail?.coverUrl || currentTrack.cover})`
+            backgroundImage: `url(${vinylImg}), url(${getCoverUrl()})`
           }"></div>
         </div>
       </div>

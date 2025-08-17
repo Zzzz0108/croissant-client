@@ -6,7 +6,7 @@ import coverImg from '@/assets/cover.png'
 import { AudioStore } from '@/stores/modules/audio'
 
 const route = useRoute()
-const audui = AudioStore()
+const audio = AudioStore()
 
 // 直接注入 audioPlayer
 const audioPlayer = inject('audioPlayer')
@@ -35,11 +35,31 @@ const getSongs = async () => {
     })
     if (res.code === 0 && res.data) {
         const pageData = res.data
-        songs.value = pageData.items
-        playlist.value.trackCount = pageData.total
+        
+        // 去重逻辑：基于songId去重
+        const uniqueSongs = []
+        const seenIds = new Set()
+        
+        pageData.items.forEach(song => {
+            const songId = Number(song.songId)
+            if (!seenIds.has(songId)) {
+                seenIds.add(songId)
+                uniqueSongs.push(song)
+            } else {
+                console.warn(`⚠️ 发现重复歌曲: ${song.songName} (ID: ${song.songId})`)
+            }
+        })
+        
+        console.log(`📊 去重结果: 原始数据 ${pageData.items.length} 首，去重后 ${uniqueSongs.length} 首`)
+        
+        // 检查数据质量
+        checkDataQuality(uniqueSongs)
+        
+        songs.value = uniqueSongs
+        playlist.value.trackCount = uniqueSongs.length
         // 使用第一首歌的封面作为封面图
-        if (pageData.items.length > 0) {
-            playlist.value.coverImgUrl = pageData.items[0].coverUrl || coverImg
+        if (uniqueSongs.length > 0) {
+            playlist.value.coverImgUrl = uniqueSongs[0].coverUrl || coverImg
         }
     }
 }
@@ -49,30 +69,97 @@ const handleSearch = () => {
     getSongs()
 }
 
+// 检查数据质量
+const checkDataQuality = (songs) => {
+    console.log(`🔍 数据质量检查: ${songs.length} 首歌曲`)
+    
+    const issues = []
+    const idCounts = {}
+    
+    songs.forEach((song, index) => {
+        // 检查ID
+        if (!song.songId) {
+            issues.push(`第${index + 1}首歌曲缺少songId`)
+        } else {
+            const songId = Number(song.songId)
+            idCounts[songId] = (idCounts[songId] || 0) + 1
+        }
+        
+        // 检查必要字段
+        if (!song.songName) {
+            issues.push(`第${index + 1}首歌曲缺少songName`)
+        }
+        if (!song.artistName) {
+            issues.push(`第${index + 1}首歌曲缺少artistName`)
+        }
+    })
+    
+    // 检查重复ID
+    Object.entries(idCounts).forEach(([id, count]) => {
+        if (count > 1) {
+            issues.push(`歌曲ID ${id} 出现了 ${count} 次`)
+        }
+    })
+    
+    if (issues.length > 0) {
+        console.warn(`⚠️ 数据质量问题:`, issues)
+    } else {
+        console.log(`✅ 数据质量良好`)
+    }
+    
+    return issues
+}
+
 const handlePlayAll = async () => {
-    audui.setAudioStore('trackList', [])
+    try {
+        console.log('🎵 收藏歌单页面 - 播放全部开始:', {
+            songsCount: songs.value.length,
+            songs: songs.value
+        })
 
-    if (songs.value.length) return
+        if (!songs.value || songs.value.length === 0) {
+            console.warn('🎵 收藏歌单页面 - 没有歌曲可播放')
+            return
+        }
 
-    const result = songs.value.map(song => ({
-        id: song.songId.toString(),
-        title: song.songName,
-        artist: song.artistName,
-        album: song.album,
-        cover: song.coverUrl || coverImg,
-        url: song.audioUrl,
-        duration: parseFloat(song.duration) * 1000,
-        likeStatus: song.likeStatus
-    }))
+        // 转换歌曲数据格式
+        const result = songs.value.map(song => ({
+            id: song.songId.toString(),
+            title: song.songName,
+            artist: song.artistName,
+            album: song.album,
+            cover: song.coverUrl || coverImg,
+            url: song.audioUrl,
+            duration: parseFloat(song.duration) * 1000,
+            likeStatus: song.likeStatus
+        }))
 
-    audui.setAudioStore('trackList', result)
-    audui.setAudioStore('currentSongIndex', 0)
-    await loadTrack()
-    play()
+        console.log('🎵 收藏歌单页面 - 转换后的歌曲数据:', result)
+
+        // 设置播放列表和当前歌曲索引
+        audio.setAudioStore('trackList', result)
+        audio.setAudioStore('currentSongIndex', 0)
+
+        console.log('🎵 收藏歌单页面 - 播放列表设置完成:', {
+            trackList: result,
+            currentSongIndex: 0
+        })
+
+        // 加载并播放第一首歌
+        if (loadTrack && play) {
+            await loadTrack()
+            await play()
+            console.log('🎵 收藏歌单页面 - 播放全部成功')
+        } else {
+            console.error('🎵 收藏歌单页面 - loadTrack 或 play 函数未注入')
+        }
+    } catch (error) {
+        console.error('🎵 收藏歌单页面 - 播放全部失败:', error)
+    }
 }
 
 // 监听当前页面歌曲列表的变化
-watch(() => audui.currentPageSongs, (newSongs) => {
+watch(() => audio.currentPageSongs, (newSongs) => {
     if (newSongs && newSongs.length > 0) {
         // 检查是否有歌曲的收藏状态变为0（取消收藏）
         const hasUnlikedSong = newSongs.some((song) => song.likeStatus === 0)
