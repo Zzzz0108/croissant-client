@@ -65,6 +65,11 @@ const comments = computed(() => {
 // 获取当前用户名
 const currentUsername = computed(() => userStore.userInfo?.username || '')
 
+// 实时计算评论数量
+const commentCount = computed(() => {
+  return comments.value.length
+})
+
 // 发布评论
 const handleComment = async () => {
   if (!userStore.isLoggedIn) {
@@ -72,7 +77,7 @@ const handleComment = async () => {
     return
   }
 
-  if (commentContent.value.trim()) {
+  if (!commentContent.value.trim()) {
     ElMessage.warning('请输入评论内容')
     return
   }
@@ -81,10 +86,14 @@ const handleComment = async () => {
     const playlistId = Number(route.params.id)
     const content = commentContent.value.trim()
     
+    console.log('🎵 歌单详情页 - 发布评论:', { playlistId, content })
+    
     const res = await addPlaylistComment({
       playlistId,
       content
     })
+    
+    console.log('🎵 歌单详情页 - 评论发布响应:', res)
     
     if (res.code === 0) {
       ElMessage.success('评论发布成功')
@@ -99,23 +108,29 @@ const handleComment = async () => {
         })
       }
     } else {
-      ElMessage.error('评论发布失败')
+      ElMessage.error(res.message || '评论发布失败')
     }
   } catch (error) {
-    ElMessage.error('评论发布失败')
+    console.error('🎵 歌单详情页 - 评论发布失败:', error)
+    ElMessage.error(error.message || '评论发布失败')
   }
 }
 
 // 处理点赞
-const handleLike = async () => {
+const handleLike = async (comment) => {
   if (!userStore.isLoggedIn) {
     ElMessage.warning('请先登录')
     return
   }
 
   try {
+    console.log('🎵 歌单详情页 - 点赞评论:', { comment })
+    
     // 调用点赞接口
     const res = await likeComment(comment.commentId)
+    
+    console.log('🎵 歌单详情页 - 点赞响应:', res)
+    
     if (res.code === 0) {
       // 更新评论的点赞数量
       const updatedComments = comments.value.map(item => {
@@ -135,16 +150,24 @@ const handleLike = async () => {
       })
 
       ElMessage.success('点赞成功')
+    } else {
+      ElMessage.error(res.message || '点赞失败')
     }
   } catch (error) {
-    ElMessage.error('点赞失败')
+    console.error('🎵 歌单详情页 - 点赞失败:', error)
+    ElMessage.error(error.message || '点赞失败')
   }
 }
 
 // 删除评论
-const handleDelete = async () => {
+const handleDelete = async (comment) => {
   try {
+    console.log('🎵 歌单详情页 - 删除评论:', { comment })
+    
     const res = await deleteComment(comment.commentId)
+    
+    console.log('🎵 歌单详情页 - 删除响应:', res)
+    
     if (res.code === 0) {
       ElMessage.success('删除成功')
       // 重新获取歌单详情以更新评论列表
@@ -158,10 +181,11 @@ const handleDelete = async () => {
         })
       }
     } else {
-      ElMessage.error('删除失败')
+      ElMessage.error(res.message || '删除失败')
     }
   } catch (error) {
-    ElMessage.error('删除失败')
+    console.error('🎵 歌单详情页 - 删除失败:', error)
+    ElMessage.error(error.message || '删除失败')
   }
 }
 
@@ -193,7 +217,7 @@ watch(
           description: playlistData.introduction,
           coverImgUrl: playlistData.coverUrl || coverImg,
           creator: {
-            nickname: 'Vibe Music',
+            nickname: 'Croissant',
             avatarUrl: coverImg
           },
           trackCount: playlistData.songs.length,
@@ -334,7 +358,7 @@ const handlePlayAll = async () => {
                   show-word-limit
                 />
                 <div class="flex justify-end items-center mt-4 mr-1">
-                  <button @click="handleComment" :disabled="commentContent.trim()"
+                  <button @click="handleComment" :disabled="!commentContent.trim()"
                     class="px-6 py-1.5 bg-primary text-white rounded-full text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-primary/90 transition-colors">
                     发布
                   </button>
@@ -345,7 +369,7 @@ const handlePlayAll = async () => {
 
           <!-- 评论列表 -->
           <div class="mb-6 ml-6">
-            <h3 class="font-bold mb-4">最新评论（{{ formatNumber(playlist?.commentCount ?? 0) }}）</h3>
+            <h3 class="font-bold mb-4">最新评论（{{ formatNumber(commentCount) }}）</h3>
             <div v-if="comments.length">
               <template v-for="comment in comments" :key="comment.commentId">
                 <div class="flex gap-3 py-4 group mr-12">

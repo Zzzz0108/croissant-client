@@ -202,11 +202,11 @@ const isCurrentPlaying = (songId) => {
       <div class="w-full flex flex-col overflow-hidden mb-8">
         <!-- banner -->
         <div class="rounded-2xl overflow-hidden shadow-lg shadow-blue-500/10">
-          <el-carousel :interval="4000" type="card" height="260px">
-            <el-carousel-item v-for="item in bannerList" :key="item.bannerId">
+        <el-carousel :interval="4000" type="card" height="260px">
+          <el-carousel-item v-for="item in bannerList" :key="item.bannerId">
               <img :src="item.bannerUrl" class="w-full h-full object-cover rounded-2xl" />
-            </el-carousel-item>
-          </el-carousel>
+          </el-carousel-item>
+        </el-carousel>
         </div>
 
         <!-- 推荐 -->

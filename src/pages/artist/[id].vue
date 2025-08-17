@@ -38,14 +38,15 @@ const fetchArtistDetail = async () => {
         if (res.code === 0 && res.data) {
             const artistData = res.data
             
-            // 处理头像URL，判断是否包含blob，如果有则使用processImageUrl处理
+            // 处理头像URL，直接使用processImageUrl处理，它会自动处理blob后缀
             let processedAvatar = ''
             if (artistData.avatar) {
-                if (artistData.avatar.includes('blob')) {
-                    processedAvatar = processImageUrl(artistData.avatar, '400y400')
-                } else {
-                    processedAvatar = artistData.avatar
-                }
+                // 直接使用processImageUrl处理，它会自动判断是否需要添加blob后缀
+                processedAvatar = processImageUrl(artistData.avatar, '400y400')
+                console.log('🎵 歌手详情页 - 头像URL处理:', {
+                    original: artistData.avatar,
+                    processed: processedAvatar
+                })
             }
             
             artistStore.setArtistInfo({
@@ -82,13 +83,22 @@ const formatBirth = (birth) => {
 
 // 头像加载成功处理
 const handleAvatarLoad = () => {
-    console.log('🎵 歌手详情页 - 头像加载成功:', artistInfo.value?.avatar)
+    console.log('🎵 歌手详情页 - 头像加载成功:', {
+        avatar: artistInfo.value?.avatar,
+        artistName: artistInfo.value?.artistName,
+        timestamp: new Date().toISOString()
+    })
 }
 
 // 头像加载失败处理
 const handleAvatarError = (event) => {
+    console.log('🎵 歌手详情页 - 头像加载失败，设置默认头像:', {
+        originalSrc: event.target.src,
+        artistName: artistInfo.value?.artistName,
+        timestamp: new Date().toISOString()
+    })
     // 静默处理头像加载失败，不输出控制台警告
-    event.target.src = '/src/assets/default_avatar.jpg'
+    event.target.src = '/src/assets/user.jpg'
 }
 
 // 播放全部歌曲
@@ -107,14 +117,14 @@ const handlePlayAll = async () => {
 
         // 转换歌曲数据格式
         const result = artistInfo.value.songs.map(song => {
-            // 处理歌曲封面URL，判断是否包含blob
+            // 处理歌曲封面URL，直接使用processImageUrl处理
             let coverUrl = '/src/assets/default_album.jpg'
             if (song.coverUrl) {
-                if (song.coverUrl.includes('blob')) {
-                    coverUrl = processImageUrl(song.coverUrl, '350y350')
-                } else {
-                    coverUrl = song.coverUrl
-                }
+                coverUrl = processImageUrl(song.coverUrl, '350y350')
+                console.log('🎵 歌手详情页 - 歌曲封面URL处理:', {
+                    original: song.coverUrl,
+                    processed: coverUrl
+                })
             }
             
             return {

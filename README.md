@@ -1,11 +1,11 @@
-# Vibe Music Client 🎵
+# Croissant Client 🎵
 
 ## 介绍 📖
 
-**Vibe Music Client** 是一款基于 **Vue 3**、**Vite 5**、**Pinia**、**Tailwind
+**Croissant Client** 是一款基于 **Vue 3**、**Vite 5**、**Pinia**、**Tailwind
 CSS** 和 **Element Plus**
 开发的现代化 Web 音乐播放器。本项目旨在提供美观、流畅且功能丰富的音乐播放体验，后端服务由
-**Vibe Music Server** 提供支持。
+**Croissant Server** 提供支持。
 
 _（本项目界面设计借鉴了
 [KMMusicPlayer/GlassMusicPlayer](https://github.com/XiangZi7/GlassMusicPlayer)
@@ -68,18 +68,18 @@ cd croissant-client
 
     - 复制 `.env.development` 文件并重命名为 `.env.development.local`
       (推荐) 或直接修改 `.env.development`。
-    - 修改文件中的 `VITE_APP_BASE_API` 为你本地运行或部署的 **Vibe Music
+    - 修改文件中的 `VITE_APP_BASE_API` 为你本地运行或部署的 **Croissant
       Server** 后端服务地址。
 
     ```env
     # .env.development.local
 
-    # Vibe Music Server API 地址 (示例)
+    # Croissant Server API 地址 (示例)
     # 请确保替换为你的实际后端服务地址和端口
     VITE_APP_BASE_API = 'http://localhost:8080'
     ```
 
-    - **注意**: 启动前端应用前，请确保你的 `Vibe Music Server`
+    - **注意**: 启动前端应用前，请确保你的 `Croissant Server`
       后端服务已经成功配置、启动并正在运行。
 
 4.  **启动开发服务器**
@@ -143,22 +143,22 @@ cd croissant-client
 
 ## 项目后台接口 🧩
 
-本项目的前端界面依赖自建的后端服务 **Vibe Music Server**
+本项目的前端界面依赖自建的后端服务 **Croissant Server**
 来提供所有的业务逻辑和数据接口。
 
-- 请确保你已经按照 **Vibe Music Server**
+- 请确保你已经按照 **Croissant Server**
   项目的说明文档成功部署并运行了后端服务。
 - 后端仓库地址: [https://github.com/Alex-LiSun/vibe-music-server]
 
 ## 免责声明 ⚠️
 
-**Vibe Music Client**
+**Croissant Client**
 项目仅供学习和技术研究使用。应用内展示的所有音乐内容、用户数据等均由您自行部署和管理的
-**Vibe Music Server**
+**Croissant Server**
 后端服务提供。请在遵守相关国家和地区的法律法规以及版权政策的前提下使用。
 
 - **请勿用于任何商业用途。**
-- 对于因使用本项目（包括其依赖的 **Vibe Music Server**
+- 对于因使用本项目（包括其依赖的 **Croissant Server**
   后端服务）而可能产生的任何直接或间接问题、数据安全风险、版权纠纷或经济损失，项目作者不承担任何责任。
 - 用户需自行承担所有使用风险，包括确保后端服务的数据来源合法合规。
 
@@ -186,11 +186,11 @@ cd croissant-client
   - 通常在应用的设置或侧边栏菜单中可以找到主题切换选项（例如亮色/暗色模式）。请根据应用内的指引操作。
 
 - **API 无法访问？**
-  - 首先确认你的 **Vibe Music Server**
+  - 首先确认你的 **Croissant Server**
     后端服务是否已经按照其文档正确启动，并且正在运行。
   - 检查你在 `.env.development.local` 或 `.env.development` 文件中配置的
     `VITE_APP_BASE_API` 地址和端口是否与后端服务实际监听的地址和端口一致。
   - 检查浏览器开发者工具的网络(Network)选项卡，看看前端发起的 API 请求是否收到了正确的响应，或者是否有 CORS
     (跨域资源共享) 相关的错误。
   - 检查操作系统的防火墙或任何网络代理设置，确保没有阻止从前端到后端的网络连接。
-  - 查阅 **Vibe Music Server** 的运行日志，寻找可能的错误信息。
+  - 查阅 **Croissant Server** 的运行日志，寻找可能的错误信息。

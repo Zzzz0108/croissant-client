@@ -121,13 +121,11 @@ export const getPlaylistComments = (id, page = 1, pageSize = 10) => {
 }
 
 /** 添加歌单评论 */
-export const addPlaylistComment = (playlistId, content) => {
-  console.log('🎵 API 添加歌单评论:', { playlistId, content })
+export const addPlaylistComment = (data) => {
+  console.log('🎵 API 添加歌单评论:', data)
   
   // 根据后端逻辑，使用正确的API路径
-  return http('post', '/comment/addPlaylistComment', {
-    data: { playlistId, content }
-  })
+  return http('post', '/comment/addPlaylistComment', { data })
 }
 
 /** 获取歌曲评论 */
@@ -138,13 +136,11 @@ export const getSongComments = (id, page = 1, pageSize = 10) => {
 }
 
 /** 添加歌曲评论 */
-export const addSongComment = (songId, content) => {
-  console.log('🎵 API 添加歌曲评论:', { songId, content })
+export const addSongComment = (data) => {
+  console.log('🎵 API 添加歌曲评论:', data)
   
   // 根据后端逻辑，使用正确的API路径
-  return http('post', '/comment/addSongComment', {
-    data: { songId, content }
-  })
+  return http('post', '/comment/addSongComment', { data })
 }
 
 /** 收藏歌曲 */

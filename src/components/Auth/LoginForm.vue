@@ -36,18 +36,30 @@ const errors = reactive({
 
 // 切换登录模式
 const switchMode = (newMode) => {
+  console.log('🔄 切换登录模式:', mode.value, '->', newMode)
+  
   mode.value = newMode
+  
   // 清空相关字段和错误
   if (newMode === 'password') {
+    console.log('🔐 切换到密码模式：清空验证码字段')
     loginForm.verificationCode = ''
     errors.verificationCode = ''
   } else {
+    console.log('📱 切换到验证码模式：清空密码字段')
     loginForm.password = ''
     errors.password = ''
   }
+  
   // 清空所有错误
   Object.keys(errors).forEach(key => {
     errors[key] = ''
+  })
+  
+  console.log('✅ 模式切换完成，当前表单状态:', {
+    mode: mode.value,
+    hasPassword: !!loginForm.password,
+    hasVerificationCode: !!loginForm.verificationCode
   })
 }
 
@@ -172,11 +184,17 @@ const handleSendCode = async () => {
 
 // 登录处理
 const handleLogin = async () => {
+  console.log('🎵 开始登录验证，当前模式:', mode.value)
+  
   // 验证必填字段
   validateEmail()
+  
+  // 根据登录模式进行相应的验证
   if (mode.value === 'password') {
+    console.log('🔐 密码登录模式：验证密码')
     validatePassword()
   } else {
+    console.log('📱 验证码登录模式：验证验证码')
     validateCode()
   }
   
@@ -187,7 +205,10 @@ const handleLogin = async () => {
   
   // 检查是否有错误
   const hasErrors = Object.values(errors).some(error => error !== '')
-  if (hasErrors) return
+  if (hasErrors) {
+    console.log('❌ 验证失败，错误信息:', errors)
+    return
+  }
 
   // 根据登录模式准备数据
   const loginData = {
@@ -196,15 +217,18 @@ const handleLogin = async () => {
   
   if (mode.value === 'password') {
     loginData.password = loginForm.password
+    console.log('🔐 密码登录：发送密码字段')
   } else {
-            loginData.verificationCode = loginForm.verificationCode
+    loginData.verificationCode = loginForm.verificationCode
+    console.log('📱 验证码登录：发送验证码字段，不包含密码')
   }
 
+  console.log('📤 准备发送的登录数据:', loginData)
   loading.value = true
+  
   try {
-    console.log('发送登录请求，数据:', loginData)
     const result = await userStore.userLogin(loginData)
-    console.log('登录结果:', result)
+    console.log('📥 登录结果:', result)
     
     if (result.success) {
       ElNotification({
@@ -223,7 +247,7 @@ const handleLogin = async () => {
       })
     }
   } catch (error) {
-    console.error('登录异常:', error)
+    console.error('❌ 登录异常:', error)
     ElNotification({
       title: '登录异常',
       message: error.message || '登录失败',
