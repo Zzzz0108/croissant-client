@@ -201,25 +201,27 @@ const isCurrentPlaying = (songId) => {
     <div class="flex-1">
       <div class="w-full flex flex-col overflow-hidden mb-8">
         <!-- banner -->
-        <el-carousel :interval="4000" type="card" height="260px">
-          <el-carousel-item v-for="item in bannerList" :key="item.bannerId">
-            <img :src="item.bannerUrl" class="w-full h-full object-cover rounded-lg" />
-          </el-carousel-item>
-        </el-carousel>
+        <div class="rounded-2xl overflow-hidden shadow-lg shadow-blue-500/10">
+          <el-carousel :interval="4000" type="card" height="260px">
+            <el-carousel-item v-for="item in bannerList" :key="item.bannerId">
+              <img :src="item.bannerUrl" class="w-full h-full object-cover rounded-2xl" />
+            </el-carousel-item>
+          </el-carousel>
+        </div>
 
         <!-- 推荐 -->
-        <button class="mt-6">
+        <div class="mt-6 p-6 bg-white/50 dark:bg-gray-800/50 rounded-2xl shadow-lg shadow-gray-200/50 dark:shadow-gray-900/50 backdrop-blur-sm">
           <div class="flex justify-between items-center mb-4">
             <h2 class="text-xl font-semibold">今日为你推荐</h2>
             <button @click="router.push('/playlist')"
-              class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 text-primary underline-offset-4 hover:underline h-10 px-4 py-2">
+              class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 text-primary underline-offset-4 hover:underline h-10 px-4 py-2">
               <icon-hugeicons:more class="text-lg" />
               更多
             </button>
           </div>
           <div class="grid grid-cols-4 md:grid-cols-7 gap-4">
             <div
-              class="rounded-2xl transition duration-300 hover:bg-hoverMenuBg bg-card text-card-foreground border-0 shadow-nonec cursor-pointer"
+              class="rounded-2xl transition duration-300 hover:bg-hoverMenuBg bg-card text-card-foreground border border-gray-100 dark:border-gray-700 shadow-md hover:shadow-lg shadow-gray-200/50 dark:shadow-gray-800/50 cursor-pointer overflow-hidden"
               v-for="i in recommendedPlaylist.slice(0, 7)" :key="i.playlistId"
               @click="router.push(`/playlist/${i.playlistId}`)">
               <div class="p-0">
@@ -228,7 +230,7 @@ const isCurrentPlaying = (songId) => {
                     " />
                   />
                 </div>
-                <div class="flex flex-col p-2">
+                <div class="flex flex-col p-3">
                   <h3 class="line-clamp-2 font-medium mb-1 playlist-title">
                     {{ i.title }}
                   </h3>
@@ -236,15 +238,15 @@ const isCurrentPlaying = (songId) => {
               </div>
             </div>
           </div>
-        </button>
+        </div>
       </div>
 
       <!-- 歌曲 -->
-      <div class="w-full">
+      <div class="w-full p-6 bg-white/50 dark:bg-gray-800/50 rounded-2xl shadow-lg shadow-gray-200/50 dark:shadow-gray-900/50 backdrop-blur-sm">
         <div class="flex justify-between items-center mb-4">
           <h2 class="text-xl font-semibold mb-4">相似推荐</h2>
           <button @click="handleRefreshSongs()"
-            class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 text-primary underline-offset-4 hover:underline h-10 px-4 py-2">
+            class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 text-primary underline-offset-4 hover:underline h-10 px-4 py-2">
             <icon-tabler:refresh class="text-lg" />
             刷新
           </button>
@@ -252,17 +254,17 @@ const isCurrentPlaying = (songId) => {
         <el-scrollbar class="h-full" overflow-auto>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4 gap-x-16">
             <button v-for="item in recommendedSongList" :key="item.id"
-              class="grid grid-cols-[auto_2fr_1fr] items-center gap-4 transition duration-300 rounded-2xl w-full group"
+              class="grid grid-cols-[auto_2fr_1fr] items-center gap-4 transition duration-300 rounded-2xl w-full group p-4 border border-gray-100 dark:border-gray-700 shadow-md hover:shadow-lg shadow-gray-200/50 dark:shadow-gray-800/50 hover:scale-[1.02]"
               :class="[
                 isCurrentPlaying(item.id) ? 'bg-hoverMenuBg' : 'hover:bg-hoverMenuBg'
               ]" @click.stop="handlePlaylclick(item)">
               <!-- 专辑封面 -->
-              <div class="w-16 h-16 rounded-2xl overflow-hidden relative">
+              <div class="w-16 h-16 rounded-2xl overflow-hidden relative shadow-md">
                 <el-image :alt="item.name" width="64" height="64" class="w-full h-full object-cover"
                   :src="item.album.picUrl + '?param=90y90'" />
                 <!-- Play 按钮，使用 group-hover 控制透明度 -->
                 <button @click.stop="handlePlaylclick(item)"
-                  class="absolute inset-0 flex items-center justify-center text-white opacity-0 transition-opacity duration-300 z-10 group-hover:opacity-100 group-hover:bg-black/50">
+                  class="absolute inset-0 flex items-center justify-center text-white opacity-0 transition-opacity duration-300 z-10 group-hover:opacity-100 group-hover:bg-black/50 rounded-2xl">
                   <icon-tabler:player-play-filled class="text-lg" />
                 </button>
               </div>

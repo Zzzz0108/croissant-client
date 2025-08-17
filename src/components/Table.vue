@@ -7,6 +7,7 @@ import { ElMessage } from 'element-plus'
 import { UserStore } from '@/stores/modules/user'
 import { AudioStore } from '@/stores/modules/audio'
 import { processImageUrl } from '@/utils/minio'
+import { isDev } from '@/config/env'
 
 const audio = AudioStore()
 const userStore = UserStore()
@@ -257,7 +258,7 @@ const isCurrentPlaying = (songId) => {
       const isCurrent = Number(currentTrack.id) === Number(songId)
       
       // 添加调试信息（仅在开发环境）
-      if (process.env.NODE_ENV === 'development' && isCurrent) {
+      if (isDev && isCurrent) {
         console.log('🎵 Table组件 - 当前播放歌曲匹配:', {
           songId,
           currentTrackId: currentTrack.id,

@@ -25,6 +25,7 @@
     "axios": "^1.7.9",
     "element-plus": "^2.9.3",
     "js-cookie": "^3.0.5",
+    "lottie-web": "^5.13.0",
     "nprogress": "^0.2.0",
     "pinia": "^2.3.1",
     "pinia-plugin-persistedstate": "^4.2.0",

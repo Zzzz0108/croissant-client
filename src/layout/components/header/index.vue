@@ -145,25 +145,27 @@ onMounted(() => {
 })
 </script>
 <template>
-  <header class="px-4 py-2 border-b flex items-center">
+  <header class="px-4 py-2 border-b flex items-center justify-between">
+    <!-- 左侧：Logo和应用名 -->
     <button class="flex relative w-60" @click="router.push('/')">
       <img src="\logo.svg" alt="logo" class="w-10 h-10 ml-2" />
-      <span class="ml-3 text-2xl font-bold flex justify-center items-center"
-        >Vibe Music</span
+      <span class="ml-3 text-2xl font-bold flex justify-center items-center app-name"
+        >Croissant</span
       >
     </button>
-            <!-- 输入框和头像 -->
-    <div class="flex items-center gap-3">
-      <div class="relative mr-6">
+    
+    <!-- 中间：搜索框 -->
+    <div class="flex-1 flex justify-center max-w-2xl mx-8">
+      <div class="relative w-full max-w-md">
         <Icon
           icon="mdi:magnify"
-          class="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-500 text-xl"
+          class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-xl z-10"
         />
         <input
           v-model="searchText"
           type="text"
-          class="mt-0.5 w-64 text-sm pl-8 pr-2 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary transition-all duration-300 focus:w-80 search-bg"
-          placeholder="搜索..."
+          class="w-full text-sm pl-10 pr-4 py-2 rounded-full focus:outline-none focus:ring-2 focus:ring-primary transition-all duration-300 search-bg border border-gray-200 dark:border-gray-700"
+          placeholder="搜索音乐、歌手、歌单..."
           @keyup.enter="handleSearch"
           @focus="showSearchHistory = true"
           @blur="handleSearchBlur"
@@ -172,7 +174,7 @@ onMounted(() => {
         <!-- 搜索历史下拉面板 -->
         <div 
           v-if="showSearchHistory && searchHistory.length > 0"
-          class="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50 max-h-64 overflow-y-auto"
+          class="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50 max-h-64 overflow-y-auto"
         >
           <div class="p-3 border-b border-gray-200 dark:border-gray-700">
             <div class="flex items-center justify-between">
@@ -207,16 +209,27 @@ onMounted(() => {
           </div>
         </div>
       </div>
-      <button @click="toggleMode">
+    </div>
+    
+    <!-- 右侧：主题切换和头像 -->
+    <div class="flex items-center gap-3">
+      <button @click="toggleMode" class="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors">
         <Icon class="text-xl" :icon="currentIcon" />
       </button>
+      <Avatar />
     </div>
-    <div class="ml-auto flex items-center gap-3"><Avatar /></div>
   </header>
 </template>
 
 <style scoped>
+@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&display=swap');
+
 .search-bg {
   background-color: #e3e3e3;
 }
+
+.app-name {
+  font-family: "Bricolage Grotesque", sans-serif;
+}
+
 </style>

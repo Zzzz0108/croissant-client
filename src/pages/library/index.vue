@@ -132,11 +132,11 @@ watch(
 </script>
 
 <template>
-    <div class="flex-1 h-full flex flex-col overflow-hidden">
+    <div class="flex-1 h-full flex flex-col overflow-hidden p-4">
 
         
         <!-- 搜索结果提示 -->
-        <div v-if="route.query.query" class="px-4 py-2 bg-blue-50 dark:bg-blue-900/20 border-b border-blue-200 dark:border-blue-800">
+        <div v-if="route.query.query" class="px-4 py-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl shadow-md shadow-blue-200/30 dark:shadow-blue-900/20 mb-4">
             <div class="flex items-center justify-between">
                 <span class="text-sm text-blue-700 dark:text-blue-300">
                     搜索结果: "{{ route.query.query }}" (共 {{ state.total }} 首歌曲)
@@ -153,12 +153,14 @@ watch(
         </div>
         
         <!-- 表格内容 -->
-        <Table :data="tableData?.items" class="flex-1 overflow-x-hidden" />
+        <div class="flex-1 overflow-x-hidden bg-white/50 dark:bg-gray-800/50 rounded-2xl shadow-lg shadow-gray-200/50 dark:shadow-gray-900/50 backdrop-blur-sm p-4">
+            <Table :data="tableData?.items" class="flex-1 overflow-x-hidden" />
+        </div>
         
         <!-- 分页 -->
-        <nav class="mx-auto flex w-full justify-center mt-3">
+        <nav class="mx-auto flex w-full justify-center">
             <el-pagination v-model:page-size="pageSize" v-model:currentPage="currentPage" v-bind="state"
-                @size-change="handleSizeChange" @current-change="handleCurrentChange" class="mb-3" />
+                @size-change="handleSizeChange" @current-change="handleCurrentChange" />
         </nav>
     </div>
 </template>

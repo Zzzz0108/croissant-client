@@ -140,9 +140,9 @@ onMounted(() => {
 })
 </script>
 <template>
-  <div class="flex h-full overflow-hidden">
+  <div class="flex h-full overflow-hidden p-4 gap-4">
     <!-- 左侧固定区域：歌手分类和搜索栏 -->
-    <div class="w-64 bg-background p-4 flex-shrink-0 border-r border-border">
+    <div class="w-64 bg-white/50 dark:bg-gray-800/50 p-4 flex-shrink-0 border-r border-border rounded-2xl shadow-lg shadow-gray-200/50 dark:shadow-gray-900/50 backdrop-blur-sm">
       <div class="flex items-center justify-between mb-4">
         <h2 class="text-lg font-semibold">歌手分类</h2>
         <button @click="handleReset"
@@ -247,7 +247,7 @@ onMounted(() => {
       </div>
       
       <!-- 分页器 -->
-      <div class="border-t border-border bg-background p-4">
+      <div class="border-t border-border bg-background px-4">
         <nav class="flex justify-center">
           <el-pagination 
             v-model:page-size="pageSize" 

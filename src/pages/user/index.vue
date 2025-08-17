@@ -20,7 +20,7 @@ const cropper = ref(null)
 const authVisible = ref(false)
 
 // 环境变量
-const isDevelopment = computed(() => import.meta.env.MODE === 'development')
+import { isDevelopment } from '@/config/env'
 
 const userForm = reactive({
   userId: userStore.userInfo.userId,

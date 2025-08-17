@@ -182,10 +182,11 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="flex flex-col h-full bg-background flex-1 md:overflow-hidden">
-    <div class="flex flex-col md:flex-row p-6 gap-6">
+  <div class="flex flex-col h-full bg-background flex-1 md:overflow-hidden p-4">
+    <!-- 歌单信息区域 -->
+    <div class="flex flex-col md:flex-row p-6 gap-6 bg-white/50 dark:bg-gray-800/50 rounded-2xl shadow-lg shadow-gray-200/50 dark:shadow-gray-900/50 backdrop-blur-sm mb-6">
       <div class="flex-shrink-0 w-60 h-60">
-        <img :alt="playlist.name" class="w-full h-full object-cover rounded-lg shadow-lg"
+        <img :alt="playlist.name" class="w-full h-full object-cover rounded-2xl shadow-xl shadow-gray-300/50 dark:shadow-gray-700/50"
           :src="playlist.coverImgUrl + '?param=500y500'" />
       </div>
       <div class="flex flex-col justify-between flex-1">
@@ -201,7 +202,7 @@ onMounted(() => {
         </div>
         <div class="flex items-center justify-between mt-4">
           <button @click="handlePlayAll"
-            class="text-white inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 rounded-lg px-8">
+            class="text-white inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 rounded-xl px-8 shadow-md hover:shadow-lg transition-shadow">
             <icon-solar:play-line-duotone />
             播放全部
           </button>
@@ -210,14 +211,14 @@ onMounted(() => {
             <icon-akar-icons:search
               class="lucide lucide-search absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
             <input v-model="searchKeyword" @keyup.enter="handleSearch"
-              class="flex h-10 rounded-lg border border-input transform duration-300 bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-0 pl-10 w-56"
+              class="flex h-10 rounded-xl border border-input transform duration-300 bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-0 pl-10 w-56 shadow-sm"
               placeholder="搜索" />
           </div>
         </div>
       </div>
     </div>
     <Table :data="songs" class="flex-1 md:overflow-x-hidden" />
-    <nav class="mx-auto flex w-full justify-center mt-3">
+    <nav class="mx-auto flex w-full justify-center">
       <el-pagination
         v-model:current-page="currentPage"
         v-model:page-size="pageSize"
@@ -226,7 +227,6 @@ onMounted(() => {
         layout="total, sizes, prev, pager, next, jumper"
         @size-change="getSongs"
         @current-change="getSongs"
-        class="mb-3"
       />
     </nav>
   </div>

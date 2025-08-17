@@ -4,15 +4,15 @@ import {
   createWebHashHistory,
 } from 'vue-router'
 
-const mode = import.meta.env.VITE_ROUTER_MODE
+import { routerMode } from '@/config/env'
 
-const routerMode = {
+const routerModeConfig = {
   hash: () => createWebHashHistory(),
   history: () => createWebHistory(),
 }
 
 const router = createRouter({
-  history: routerMode[mode](),
+  history: routerModeConfig[routerMode](),
   strict: false,
   scrollBehavior: () => ({ left: 0, top: 0 }),
   routes: [
@@ -31,6 +31,7 @@ const router = createRouter({
     {
       path: '/artist/:id',
       component: () => import('@/pages/artist/[id].vue'),
+      name: 'ArtistDetail',
     },
     {
       path: '/playlist',
