@@ -15,7 +15,7 @@ export const useFavoriteStore = defineStore('favorite', {
       try {
         this.loading = true
         
-        // 调用正确的API路径，使用正确的参数格式
+        // api
         const res = await getFavoritePlaylists({ 
           pageNum: 1, 
           pageSize: 50,

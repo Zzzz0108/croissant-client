@@ -6,16 +6,16 @@ import ResetPasswordForm from './ResetPasswordForm.vue'
 
 const props = defineProps({
   modelValue: {
-    type: [String, Boolean],
+    type: [String, Boolean],//定义modelValue的类型，String或Boolean，默认值为'login'
     default: 'login'
   }
 })
 
-const emit = defineEmits(['update:modelValue'])
+const emit = defineEmits(['update:modelValue'])//定义emit，用于向父组件传递事件，更新modelValue的值
 
 const dialogVisible = computed({
-  get: () => props.modelValue,
-  set: (value) => emit('update:modelValue', value),
+  get: () => props.modelValue,//获取modelValue的值，返回当前的modelValue，如果modelValue为true，则返回true，否则返回'login'
+  set: (value) => emit('update:modelValue', value),//
 })
 
 const activeTab = ref('login')

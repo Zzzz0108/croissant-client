@@ -21,6 +21,7 @@ export const AudioPlayer = () => {
       const track = audioStore.trackList[audioStore.currentSongIndex] || defaultSong//获取当前播放的歌曲
       return track
     }
+    //返回当前播放的歌曲
   )
   const currentTime = ref(0)
   const duration = ref(0)
@@ -39,6 +40,7 @@ export const AudioPlayer = () => {
 
     try {
       await audioElement.value.play()
+      //await 等待音频元素播放完成，然后执行下面的代码
       isPlaying.value = true
     } catch (error) {
       console.error('播放失败:', error)
