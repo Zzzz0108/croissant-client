@@ -5,21 +5,20 @@ import { urlV1 } from '@/api'
 import { AudioStore } from '@/stores/modules/audio'
 
 export const AudioPlayer = () => {
-  const audioStore = AudioStore()
-  const audioElement = ref(null)
-  const isPlaying = ref(false)
-  const volume = ref()
-  const playMode = ref('order') // 默认为顺序播放
+  const audioStore = AudioStore()//Pinia音频播放器状态管理
+  const audioElement = ref(null)//音频元素
+  const isPlaying = ref(false)//是否播放
+ 
+  const volume = computed(() => audioStore.volume)
+  const playMode = computed(() => audioStore.playMode)
+  //用计算属性 (computed) 来创建响应式的派生状态，这些状态是从 store 中的状态计算得来的，可以避免在组件中直接修改 store 中的状态
+  //当 store 中的状态发生变化时，计算属性会自动更新，组件中可以访问这些派生状态，而不需要直接访问 store 中的状态
+  //派生状态是响应式的，组件中可以访问修改，组件中修改后会自动更新到派生状态中，派生状态中的数据会自动持久化到本地存储，下次刷新页面后，会从本地存储中恢复
 
   // 当前播放的歌曲
   const currentTrack = computed(
     () => {
-      const track = audioStore.trackList[audioStore.currentSongIndex] || defaultSong
-      console.log('currentTrack 计算属性:', {
-        trackList: audioStore.trackList,
-        currentSongIndex: audioStore.currentSongIndex,
-        track: track
-      })
+      const track = audioStore.trackList[audioStore.currentSongIndex] || defaultSong//获取当前播放的歌曲
       return track
     }
   )
@@ -220,15 +219,18 @@ export const AudioPlayer = () => {
   // 设置音量
   const setVolume = (newVolume) => {
     if (audioElement.value) {
-      volume.value = newVolume
+      // 使用通用的 setAudioStore 方法设置音量
       audioStore.setAudioStore('volume', newVolume)
+      // 同时更新音频元素的音量
       audioElement.value.volume = newVolume / 100
     }
   }
 
   // 设置播放模式
   const setPlayMode = (mode) => {
-    playMode.value = mode
+    // 使用通用的 setAudioStore 方法设置播放模式
+    audioStore.setAudioStore('playMode', mode)
+    
     const modeText = {
       order: '顺序播放',
       shuffle: '随机播放',
@@ -245,8 +247,9 @@ export const AudioPlayer = () => {
   // 组件挂载时初始化音频元素
   onMounted(() => {
     audioElement.value = new Audio(currentTrack.value.url)
-    volume.value = audioStore.volume || 50
-    audioElement.value.volume = volume.value / 100
+    // 使用 store 中的音量设置
+    const initialVolume = audioStore.volume || 50
+    audioElement.value.volume = initialVolume / 100
     // 添加事件监听器
     audioElement.value.addEventListener('timeupdate', updateTime)
     audioElement.value.addEventListener('ended', nextTrack)

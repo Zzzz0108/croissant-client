@@ -12,11 +12,35 @@ const { loadTrack, play, audioElement } = audioPlayer || {}
 
 const mouseOverIndex = ref(-1) // 用于跟踪鼠标悬停的索引
 
-const playMusic = async () => {
-  audio.addTracks(song)
-  // 加载
-  await loadTrack()
-  play()
+const playMusic = async (song) => {
+  // 找到歌曲在播放列表中的索引
+  const songIndex = audio.trackList.findIndex(track => track.id === song.id)
+  
+  if (songIndex !== -1) {
+    // 1. 先停止当前播放
+    if (audioPlayer && audioPlayer.pause) {
+      audioPlayer.pause()
+    }
+    
+    // 2. 更新播放索引
+    audio.currentSongIndex = songIndex
+    
+    // 3. 等待一小段时间，确保停止完成
+    await new Promise(resolve => setTimeout(resolve, 100))
+    
+    // 4. 加载新歌曲
+    if (audioPlayer && audioPlayer.loadTrack) {
+      await audioPlayer.loadTrack()
+    }
+    
+    // 5. 再等待一小段时间，确保加载完成
+    await new Promise(resolve => setTimeout(resolve, 100))
+    
+    // 6. 开始播放
+    if (audioPlayer && audioPlayer.play) {
+      await audioPlayer.play()
+    }
+  }
 }
 
 const handleClearAll = () => {

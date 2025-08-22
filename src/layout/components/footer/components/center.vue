@@ -28,6 +28,9 @@ const {
   seek,
 } = audioPlayer || {}
 
+// 获取音量状态
+const volume = computed(() => audioStore.volume)
+
 // 获取当前播放歌曲的喜欢状态
 const currentSongLikeStatus = computed(() => {
   const currentTrack = audioStore.trackList[audioStore.currentSongIndex]

@@ -8,6 +8,9 @@ import { provide } from 'vue'
 import { AudioPlayer } from '@/hooks/useAudioPlayer'
 
 provide('audioPlayer', AudioPlayer())
+//在顶层提供音频播放器实例，供子组件使用，因为子组件都可能需要使用音频播放器，而且需要保持状态同步
+//父组件用provide提供，子组件用inject注入
+//audioPlayer是key，作为名字供子组件使用，AudioPlayer()是value，AudioPlayer()返回一个对象，对象中包含音频播放器实例
 </script>
 <template>
   <!-- <BG /> -->
