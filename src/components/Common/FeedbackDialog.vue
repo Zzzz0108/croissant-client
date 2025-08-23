@@ -7,11 +7,11 @@ const dialogVisible = ref(false)
 const loading = ref(false)
 const formRef = ref()
 
-const formData = reactive({
+const formData = reactive({//表单数据
   content: ''
 })
 
-const rules = reactive({
+const rules = reactive({//表单验证规则
   content: [
     { required: true, message: '请输入反馈内容', trigger: 'blur' },
     { min: 10, message: '反馈内容不能少于 10 个字符', trigger: 'blur' },
@@ -33,7 +33,7 @@ const closeDialog = () => {
 
 // 提交反馈
 const handleSubmit = async () => {
-  if (formRef.value) return
+  if (!formRef.value) return
   await formRef.value.validate(async (valid) => {
     if (valid) {
       loading.value = true

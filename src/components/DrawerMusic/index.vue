@@ -1,58 +1,13 @@
 <script setup lang="js">
 import Left from './left.vue'
 import Right from './right.vue'
-import { useDark, useToggle } from '@vueuse/core'
 import { useDateFormat, useNow } from '@vueuse/core'
 import { getSongDetail } from '@/api/system'
 import { ref, provide, watch, inject, computed } from 'vue'
-import { themeStore } from '@/stores/modules/theme'
 
 const formatted = useDateFormat(useNow(), 'HH:mm:ss')
-const theme = themeStore()
 const showDrawer = defineModel()
 const songDetail = ref(null)
-
-const isDark = useDark({
-  selector: 'html',
-  attribute: 'class',
-  valueDark: 'dark',
-  valueLight: 'light',
-})
-const toggleDark = useToggle(isDark)
-
-// 初始化时检查并同步暗黑模式状态
-console.log('🎵 DrawerMusic 初始化状态检查:', {
-  themeIsDark: theme.isDark,
-  isDarkValue: isDark.value,
-  shouldSync: theme.isDark !== isDark.value
-})
-
-// 如果初始状态不同步，则同步
-if (theme.isDark !== isDark.value) {
-  console.log('🎵 DrawerMusic 初始化时同步状态')
-  if (theme.isDark) {
-    isDark.value = true
-  } else {
-    isDark.value = false
-  }
-}
-const toggleMode = () => {
-  // 修复暗黑模式逻辑：直接切换当前状态
-  const newDarkMode = !theme.isDark
-  theme.setDark(newDarkMode)
-  
-  // 同步 isDark 状态
-  if (newDarkMode !== isDark.value) {
-    toggleDark()
-  }
-  
-  console.log('🎵 DrawerMusic 暗黑模式切换:', {
-    oldMode: theme.isDark,
-    newMode: newDarkMode,
-    isDarkValue: isDark.value,
-    themeIsDark: theme.isDark
-  })
-}
 
 // 直接注入 audioPlayer
 const audioPlayer = inject('audioPlayer')
@@ -129,25 +84,6 @@ watch(() => currentTrack.value.trackId || currentTrack.value.id, async (newId) =
 
 // 提供 songDetail 给子组件
 provide('songDetail', songDetail)
-
-// 监听主题状态变化，确保同步
-watch(() => theme.isDark, (newDarkMode) => {
-  console.log('🎵 DrawerMusic 主题状态变化:', {
-    newDarkMode,
-    isDarkValue: isDark.value,
-    shouldSync: newDarkMode !== isDark.value
-  })
-  
-  // 如果主题状态与 isDark 不同步，则同步
-  if (newDarkMode !== isDark.value) {
-    console.log('🎵 DrawerMusic 同步 isDark 状态')
-    if (newDarkMode) {
-      isDark.value = true
-    } else {
-      isDark.value = false
-    }
-  }
-}, { immediate: true })
 </script>
 <template>
   <el-drawer :style="{
@@ -184,13 +120,7 @@ watch(() => theme.isDark, (newDarkMode) => {
       </div>
     </main>
     <template #footer>
-      <div class="flex justify-end gap-2">
-        <el-switch 
-          :model-value="theme.isDark" 
-          @update:model-value="toggleMode" 
-          active-text="暗黑模式" 
-        />
-      </div>
+      <!-- 移除主题切换开关，保持与主界面一致 -->
     </template>
   </el-drawer>
 </template>

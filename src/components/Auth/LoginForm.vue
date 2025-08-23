@@ -21,7 +21,7 @@ let timer = null
 const loginForm = reactive({
   email: '',
   password: '',
-  verificationCode: '', // 验证码字段，与后端API保持一致
+  verificationCode: '',
 })
 
 // 错误信息

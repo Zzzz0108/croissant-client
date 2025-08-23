@@ -24,7 +24,7 @@ const registerForm = reactive({
   email: '',
   username: '',
   password: '',
-  verificationCode: '', // 验证码字段，与后端API保持一致
+  verificationCode: '', 
 })
 
 // 错误信息
